@@ -3,10 +3,10 @@ name: OMEGA CODEX TRACKER COMMITMENT LIVE
 on:
   push:
     branches: [ main ]
-
+working-directory: android/app
 jobs:
   build:
-  working-directory: android/app
+  
     runs-on: ubuntu-latest
 
     
