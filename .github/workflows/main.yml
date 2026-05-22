@@ -6,6 +6,7 @@ on:
 
 jobs:
   build:
+  working-directory: android/app
     runs-on: ubuntu-latest
 
     
