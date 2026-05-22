@@ -1,4 +1,4 @@
-     name: OMEGA CODEX TRACKER COMMIT LIVE
+name: OMEGA CODEX TRACKER COMMIT LIVE
 
 on:
   push:
@@ -33,4 +33,5 @@ jobs:
         with:
           name: app-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          
           
