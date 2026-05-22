@@ -1,4 +1,13 @@
-defaults:
+name: OMEGA CODEX TRACKER COMMITMENT LIVE
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
       run:
         working-directory: ./MyApp
     steps:
@@ -7,22 +16,6 @@ defaults:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Install dependencies
-        run: npm install    
-
-name: OMEGA CODEX TRACKER COMMITMENT LIVE
-on:
-  push:
-    branches: [ main ]
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
       - name: Install dependencies
         run: npm install
       - name: Build Web
@@ -37,4 +30,4 @@ jobs:
         with:
           name: app-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
-        
+          
