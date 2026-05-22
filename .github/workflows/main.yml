@@ -1,7 +1,4 @@
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    defaults:
+defaults:
       run:
         working-directory: ./MyApp
     steps:
