@@ -1,0 +1,306 @@
+import { useState, useEffect, useRef } from 'react';
+
+const GOD_GOAL   = 9_999_999_999;
+const BEAST_GOAL = 50;
+
+function fmt(n) {
+  if (n >= 1_000_000_000) return (n / 1_000_000_000).toFixed(3) + 'B';
+  if (n >= 1_000_000)     return (n / 1_000_000).toFixed(2) + 'M';
+  if (n >= 1_000)         return (n / 1_000).toFixed(1) + 'K';
+  return String(n);
+}
+
+function ProgressBar({ pct, color, glow }) {
+  return (
+    <div style={{ height: '8px', background: '#1a1835', borderRadius: '4px', overflow: 'hidden', position: 'relative' }}>
+      <div style={{
+        height: '100%', borderRadius: '4px',
+        width: `${Math.min(pct, 100)}%`,
+        background: color,
+        boxShadow: pct > 0 ? `0 0 10px ${glow}` : 'none',
+        transition: 'width 0.6s ease',
+      }} />
+    </div>
+  );
+}
+
+function Toggle({ on, onToggle, label, sub }) {
+  return (
+    <button onClick={onToggle} style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      width: '100%', background: 'rgba(255,255,255,0.04)',
+      border: `1.5px solid ${on ? '#00F5D4' : '#27254a'}`,
+      borderRadius: '16px', padding: '14px 18px', cursor: 'pointer',
+      transition: 'all 0.2s', boxShadow: on ? '0 0 20px rgba(0,245,212,0.2)' : 'none',
+    }}>
+      <div style={{ textAlign: 'left' }}>
+        <p style={{ fontSize: '15px', fontWeight: 800, color: on ? '#00F5D4' : '#c8c6e8' }}>{label}</p>
+        <p style={{ fontSize: '11px', color: '#5e5c88', marginTop: '2px', fontWeight: 600 }}>{sub}</p>
+      </div>
+      <div style={{
+        width: '48px', height: '26px', borderRadius: '13px',
+        background: on ? '#00F5D4' : '#27254a',
+        position: 'relative', transition: 'background 0.2s', flexShrink: 0,
+        boxShadow: on ? '0 0 14px rgba(0,245,212,0.5)' : 'none',
+      }}>
+        <div style={{
+          position: 'absolute', top: '3px',
+          left: on ? '25px' : '3px',
+          width: '20px', height: '20px', borderRadius: '50%',
+          background: '#fff', transition: 'left 0.2s',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.4)',
+        }} />
+      </div>
+    </button>
+  );
+}
+
+function ClassifiedCard({ unlocked, icon, codename, featureName, powers, progress, goal, progressColor, progressGlow, pct }) {
+  const [revealed, setRevealed] = useState(false);
+  const [justUnlocked, setJustUnlocked] = useState(false);
+  const prevRef = useRef(unlocked);
+
+  useEffect(() => {
+    if (unlocked && !prevRef.current) {
+      setJustUnlocked(true);
+      setTimeout(() => { setJustUnlocked(false); setRevealed(true); }, 1200);
+    }
+    if (unlocked) setRevealed(true);
+    prevRef.current = unlocked;
+  }, [unlocked]);
+
+  const isClose = pct > 75 && !unlocked;
+
+  return (
+    <div style={{
+      borderRadius: '20px', overflow: 'hidden', marginBottom: '14px',
+      border: `2px solid ${unlocked ? progressColor : isClose ? progressColor + '80' : '#1e1c3a'}`,
+      boxShadow: unlocked ? `0 0 30px ${progressGlow}` : isClose ? `0 0 16px ${progressGlow}` : 'none',
+      transition: 'all 0.4s',
+      animation: justUnlocked ? 'unlockFlash 1.2s ease' : 'none',
+    }}>
+      {unlocked ? (
+        /* ── UNLOCKED FACE ── */
+        <div style={{
+          background: `linear-gradient(135deg, rgba(0,0,0,0.7), ${progressGlow}20)`,
+          padding: '20px 18px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+            <span style={{ fontSize: '32px', filter: `drop-shadow(0 0 12px ${progressColor})` }}>{icon}</span>
+            <div>
+              <p style={{ fontSize: '10px', fontWeight: 900, color: progressColor, letterSpacing: '2px', fontFamily: 'monospace' }}>
+                ✅ UNLOCKED — {codename}
+              </p>
+              <p style={{ fontSize: '20px', fontWeight: 900, color: '#fff', textShadow: `0 0 16px ${progressColor}` }}>
+                {featureName}
+              </p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {powers.map((p, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: progressColor, flexShrink: 0, boxShadow: `0 0 6px ${progressColor}` }} />
+                <span style={{ fontSize: '13px', fontWeight: 700, color: '#c8c6e8' }}>{p}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        /* ── LOCKED FACE ── */
+        <div style={{
+          background: '#0a0919',
+          padding: '18px',
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
+          {/* Scanlines overlay */}
+          <div style={{
+            position: 'absolute', inset: 0, pointerEvents: 'none',
+            background: 'repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.15) 2px,rgba(0,0,0,0.15) 4px)',
+          }} />
+
+          {/* CLASSIFIED stamp */}
+          <div style={{
+            position: 'absolute', top: '16px', right: '12px',
+            transform: 'rotate(-18deg)',
+            border: '3px solid #FF0000',
+            borderRadius: '4px',
+            padding: '3px 8px',
+            color: '#FF0000',
+            fontSize: '14px',
+            fontWeight: 900,
+            fontFamily: 'monospace',
+            opacity: 0.85,
+            letterSpacing: '2px',
+            boxShadow: '0 0 10px rgba(255,0,0,0.4)',
+          }}>CLASSIFIED</div>
+
+          {/* Codename header */}
+          <p style={{ fontSize: '10px', fontFamily: 'monospace', color: '#FF4444', letterSpacing: '3px', marginBottom: '6px', fontWeight: 900 }}>
+            OPERATION: {codename}
+          </p>
+
+          {/* Corrupted / blurred name */}
+          <p style={{ fontSize: '18px', fontWeight: 900, fontFamily: 'monospace', color: '#3d3b60', marginBottom: '10px', filter: 'blur(3px)', userSelect: 'none' }}>
+            {featureName}
+          </p>
+
+          {/* Redacted description */}
+          <div style={{ marginBottom: '14px' }}>
+            {powers.map((_, i) => (
+              <div key={i} style={{ height: '10px', borderRadius: '4px', background: '#1e1c3a', marginBottom: '5px', width: `${60 + (i * 17) % 30}%` }} />
+            ))}
+          </div>
+
+          {/* Progress toward unlock */}
+          <div style={{ fontFamily: 'monospace' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+              <span style={{ fontSize: '10px', color: isClose ? progressColor : '#3d3b60', fontWeight: 800, letterSpacing: '1px' }}>
+                {isClose ? '⚠ APPROACHING THRESHOLD' : 'ACCESS LEVEL'}
+              </span>
+              <span style={{ fontSize: '10px', color: isClose ? progressColor : '#3d3b60', fontWeight: 900 }}>
+                {fmt(progress)} / {fmt(goal)}
+              </span>
+            </div>
+            <ProgressBar pct={pct} color={progressColor} glow={progressGlow} />
+            <p style={{ fontSize: '9px', color: '#2e2c48', marginTop: '5px', letterSpacing: '1px', textAlign: 'right' }}>
+              ACCESS: DENIED
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, onToggleHideAnswer }) {
+  const godPct   = Math.min((lifetimeScore / GOD_GOAL)   * 100, 100);
+  const beastPct = Math.min((bestEverStreak / BEAST_GOAL) * 100, 100);
+  const godUnlocked   = lifetimeScore   >= GOD_GOAL;
+  const beastUnlocked = bestEverStreak  >= BEAST_GOAL;
+
+  return (
+    <div style={{ height: '100%', overflowY: 'auto', padding: '0 18px 80px' }}>
+      <style>{`
+        @keyframes unlockFlash {
+          0%   { box-shadow: 0 0 0px transparent; }
+          20%  { box-shadow: 0 0 60px #fff, 0 0 120px #fff; }
+          40%  { box-shadow: 0 0 30px #FFD700; }
+          60%  { box-shadow: 0 0 50px #FFD700; }
+          100% { box-shadow: 0 0 20px var(--ug); }
+        }
+        @keyframes glitch {
+          0%,100% { transform: skewX(0deg); }
+          25%  { transform: skewX(-3deg) translateX(2px); }
+          50%  { transform: skewX(2deg) translateX(-1px); }
+          75%  { transform: skewX(-1deg); }
+        }
+      `}</style>
+
+      {/* Header */}
+      <div style={{ padding: '18px 0 12px', textAlign: 'center' }}>
+        <h1 style={{ fontSize: '24px', fontWeight: 900, color: '#c8c6e8' }}>⚙️ Settings</h1>
+      </div>
+
+      {/* ── GAMEPLAY ── */}
+      <div style={{ marginBottom: '28px' }}>
+        <SectionLabel icon="🎮" label="GAMEPLAY" color="#4D79FF" />
+        <Toggle
+          on={hideAnswer}
+          onToggle={onToggleHideAnswer}
+          label="🙈 Hide Answer"
+          sub="No ghost letters in WordBlast — type from pure memory"
+        />
+      </div>
+
+      {/* ── SECRET VAULT ── */}
+      <div>
+        <SectionLabel icon="🔐" label="SECRET VAULT" color="#FF4444" mono />
+
+        {/* Stats summary */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '20px',
+        }}>
+          <StatBox label="LIFETIME XP" value={fmt(lifetimeScore)} color="#FFD700" />
+          <StatBox label="BEST STREAK" value={`🔥 ${bestEverStreak}`} color="#FF6B6B" />
+        </div>
+
+        {/* GOD MODE card */}
+        <ClassifiedCard
+          unlocked={godUnlocked}
+          icon="👁"
+          codename="OMEGA-9B"
+          featureName="GOD MODE"
+          powers={[
+            'Score ×9999 per correct answer',
+            'Warp-drive starfield activated',
+            'All cards shimmer LEGENDARY gold',
+            'OMEGA badge in app header',
+          ]}
+          progress={lifetimeScore}
+          goal={GOD_GOAL}
+          progressColor="#FFD700"
+          progressGlow="rgba(255,215,0,0.5)"
+          pct={godPct}
+        />
+
+        {/* BEAST MODE card */}
+        <ClassifiedCard
+          unlocked={beastUnlocked}
+          icon="🔥"
+          codename="BEAST-50"
+          featureName="BEAST MODE"
+          powers={[
+            '45s start · +2s per correct answer',
+            'Score ×2 multiplier',
+            'No hints · No ghost letters',
+            'Unlocks ⚡ BEAST preset in WordBlast',
+          ]}
+          progress={bestEverStreak}
+          goal={BEAST_GOAL}
+          progressColor="#FF6B6B"
+          progressGlow="rgba(255,107,107,0.5)"
+          pct={beastPct}
+        />
+
+        {/* Vault note */}
+        <p style={{
+          fontSize: '10px', fontFamily: 'monospace', color: '#2e2c48',
+          textAlign: 'center', letterSpacing: '1px', lineHeight: 1.7,
+        }}>
+          CLASSIFIED · LUCIDLAND VAULT v1.0<br />
+          UNAUTHORIZED ACCESS PROHIBITED
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function SectionLabel({ icon, label, color, mono }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+      <div style={{ width: '4px', height: '22px', background: color, borderRadius: '2px', boxShadow: `0 0 10px ${color}` }} />
+      <span style={{
+        fontSize: '12px', fontWeight: 900, color,
+        letterSpacing: '2px', fontFamily: mono ? 'monospace' : 'inherit',
+        animation: mono ? 'glitch 4s ease-in-out infinite' : 'none',
+      }}>
+        {icon} {label}
+      </span>
+    </div>
+  );
+}
+
+function StatBox({ label, value, color }) {
+  return (
+    <div style={{
+      background: 'rgba(255,255,255,0.03)', border: '1px solid #1e1c3a',
+      borderRadius: '14px', padding: '14px', textAlign: 'center',
+    }}>
+      <p style={{ fontSize: '10px', color: '#5e5c88', fontWeight: 800, letterSpacing: '1px', marginBottom: '6px', fontFamily: 'monospace' }}>
+        {label}
+      </p>
+      <p style={{ fontSize: '20px', fontWeight: 900, color }}>{value}</p>
+    </div>
+  );
+}
