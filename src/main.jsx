@@ -1,9 +1,9 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import AethermindApp from './aethermind.jsx';
+import PhonicsApp from './PhonicsApp.jsx';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <AethermindApp />
+    <PhonicsApp />
   </StrictMode>
 );
