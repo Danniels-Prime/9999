@@ -273,7 +273,7 @@ function LangCard({ item, theme, isFlipped, onFlip, index, godMode, isPlaying, o
 }
 
 /* ── Learn View ── */
-function LearnView({ godMode, voices, known, onRate }) {
+function LearnView({ godMode, voices, known, onRate, onThemeChange }) {
   const [mode, setMode]           = useState('phrases');
   const [activeCat, setActiveCat] = useState(null);
   const [flipped, setFlipped]     = useState(new Set());
@@ -296,7 +296,8 @@ function LearnView({ godMode, voices, known, onRate }) {
     window.speechSynthesis?.cancel();
     setPlayingId(null);
     document.documentElement.style.setProperty('--app-theme', themeColor);
-  }, [activeCatKey, themeColor]);
+    onThemeChange?.(themeColor);
+  }, [activeCatKey, themeColor, onThemeChange]);
 
   /* Speak English with American accent */
   const speak = useCallback((item) => {
@@ -504,14 +505,7 @@ export default function LucidApp() {
     return () => document.head.removeChild(el);
   }, []);
 
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      const c = getComputedStyle(document.documentElement).getPropertyValue('--app-theme').trim();
-      if (c) setAppColor(c);
-    });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
-    return () => observer.disconnect();
-  }, []);
+  // Theme color is pushed directly via onThemeChange callback from LearnView — no MutationObserver needed
 
   const themeColor = godMode ? '#FFD700' : appColor;
 
@@ -528,6 +522,7 @@ export default function LucidApp() {
               voices={voices}
               known={known}
               onRate={markCard}
+              onThemeChange={setAppColor}
             />
           )}
           {view === 'blast' && (

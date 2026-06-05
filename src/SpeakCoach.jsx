@@ -66,9 +66,7 @@ export default function SpeakCoach({ themeColor, voices = [], onBack }) {
         const h = (v / 255) * canvas.height * 0.85;
         ctx.fillStyle = color;
         ctx.globalAlpha = 0.7 + (v / 255) * 0.3;
-        ctx.beginPath();
-        ctx.roundRect(i * bw, canvas.height - h, bw - 1, h, 2);
-        ctx.fill();
+        ctx.fillRect(i * bw, canvas.height - h, bw - 1, h);
       });
       ctx.globalAlpha = 1;
     };
