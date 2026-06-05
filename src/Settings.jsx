@@ -173,7 +173,7 @@ function ClassifiedCard({ unlocked, icon, codename, featureName, powers, progres
   );
 }
 
-export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, onToggleHideAnswer }) {
+export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, onToggleHideAnswer, knownCount = 0, totalCards = 896 }) {
   const godPct   = Math.min((lifetimeScore / GOD_GOAL)   * 100, 100);
   const beastPct = Math.min((bestEverStreak / BEAST_GOAL) * 100, 100);
   const godUnlocked   = lifetimeScore   >= GOD_GOAL;
@@ -218,11 +218,23 @@ export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, on
         <SectionLabel icon="🔐" label="SECRET VAULT" color="#FF4444" mono />
 
         {/* Stats summary */}
-        <div style={{
-          display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '20px',
-        }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
           <StatBox label="LIFETIME XP" value={fmt(lifetimeScore)} color="#FFD700" />
           <StatBox label="BEST STREAK" value={`🔥 ${bestEverStreak}`} color="#FF6B6B" />
+        </div>
+
+        {/* Known cards progress */}
+        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #1e1c3a', borderRadius: '14px', padding: '14px 16px', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontSize: '10px', color: '#5e5c88', fontWeight: 800, letterSpacing: '1px', fontFamily: 'monospace' }}>✅ CARDS KNOWN</span>
+            <span style={{ fontSize: '16px', fontWeight: 900, color: '#00FF88' }}>{knownCount}<span style={{ fontSize: '11px', color: '#5e5c88', fontWeight: 700 }}>/{totalCards}</span></span>
+          </div>
+          <div style={{ height: '6px', background: '#1a1835', borderRadius: '3px', overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${Math.min((knownCount / totalCards) * 100, 100)}%`, background: '#00FF88', borderRadius: '3px', transition: 'width .5s ease', boxShadow: knownCount > 0 ? '0 0 8px #00FF8880' : 'none' }} />
+          </div>
+          <p style={{ fontSize: '10px', color: '#3d3b60', marginTop: '5px', fontFamily: 'monospace' }}>
+            {knownCount === 0 ? 'Flip cards in Learn and tap ✅ to track progress' : knownCount === totalCards ? '🏆 ALL CARDS MASTERED' : `${(knownCount / totalCards * 100).toFixed(1)}% mastered`}
+          </p>
         </div>
 
         {/* GOD MODE card */}

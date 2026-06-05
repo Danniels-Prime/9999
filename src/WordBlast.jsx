@@ -42,7 +42,7 @@ function GodBurst({ color }) {
   );
 }
 
-export default function WordBlast({ themeColor, hideAnswer, beastModeUnlocked, godModeActive, onGameEnd, onBack }) {
+export default function WordBlast({ themeColor, hideAnswer, beastModeUnlocked, godModeActive, voices = [], onGameEnd, onBack }) {
   const [mode, setMode]             = useState('phrases');
   const [catKey, setCatKey]         = useState('all');
   const [gameState, setGameState]   = useState('idle');
@@ -125,10 +125,17 @@ export default function WordBlast({ themeColor, hideAnswer, beastModeUnlocked, g
       setBurst(true);
       if (godModeActive) { setGodBurst(true); setTimeout(() => setGodBurst(false), 700); }
       setTimeout(() => setBurst(false), 500);
+      // Speak English on correct answer — American accent, quick rate
+      window.speechSynthesis.cancel();
+      const _utt = new SpeechSynthesisUtterance(current.en);
+      _utt.lang = 'en-US'; _utt.rate = 1.0; _utt.pitch = 1.0;
+      const _pref = voices.find(v => v.lang === 'en-US') || voices.find(v => v.lang.startsWith('en'));
+      if (_pref) _utt.voice = _pref;
+      window.speechSynthesis.speak(_utt);
       // Beast mode: add bonus time
       if (isBeast) setTimeLeft(t => Math.min(t + BEAST_BONUS, 99));
     }
-  }, [gameState, current, streak, pool, scoreMultiplier, isBeast, godModeActive]);
+  }, [gameState, current, streak, pool, scoreMultiplier, isBeast, godModeActive, voices]);
 
   useEffect(() => {
     if (!typed || !current) return;

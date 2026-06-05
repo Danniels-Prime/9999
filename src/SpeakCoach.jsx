@@ -10,13 +10,12 @@ const ALL_CARDS = [
   ),
 ];
 
-export default function SpeakCoach({ themeColor, onBack }) {
+export default function SpeakCoach({ themeColor, voices = [], onBack }) {
   const [idx, setIdx]               = useState(0);
   const [recording, setRecording]   = useState(false);
   const [recordedUrl, setRecordedUrl] = useState(null);
   const [ttsPlaying, setTtsPlaying] = useState(false);
   const [grade, setGrade]           = useState(null);
-  const [voices, setVoices]         = useState([]);
   const [showEs, setShowEs]         = useState(true);
   const recorderRef  = useRef(null);
   const waveCanvasRef = useRef(null);
@@ -27,13 +26,7 @@ export default function SpeakCoach({ themeColor, onBack }) {
   const theme = CATEGORY_THEMES[card.catKey] || { color: themeColor, glow: `${themeColor}60`, dim: `${themeColor}15` };
 
   useEffect(() => {
-    const load = () => setVoices(window.speechSynthesis.getVoices());
-    load();
-    window.speechSynthesis.addEventListener('voiceschanged', load);
-    return () => {
-      window.speechSynthesis.removeEventListener('voiceschanged', load);
-      stopCleanup();
-    };
+    return () => stopCleanup();
   }, []);
 
   const stopCleanup = () => {
