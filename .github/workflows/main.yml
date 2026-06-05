@@ -2,7 +2,7 @@ name: Deploy PhonicsLand to GitHub Pages
 
 on:
   push:
-    branches: [main, claude/phonic-sounds-audio-BUYcj]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
