@@ -3,6 +3,18 @@ import { useState, useEffect, useRef } from 'react';
 const GOD_GOAL   = 9_999_999_999;
 const BEAST_GOAL = 50;
 
+const STUDY_MODES = [
+  { id:'flip_es_en',  icon:'🇪🇸', label:'ES → EN',     desc:'See Spanish, reveal English' },
+  { id:'flip_en_es',  icon:'🇺🇸', label:'EN → ES',     desc:'See English, reveal Spanish' },
+  { id:'flip_both',   icon:'👁',   label:'Both Sides',  desc:'Both sides always visible' },
+  { id:'flip_random', icon:'🎲',   label:'Random Dir',  desc:'Random direction each card' },
+  { id:'type',        icon:'⌨️',  label:'Type It',     desc:'See Spanish, type English' },
+  { id:'listen',      icon:'🎧',  label:'Listen',      desc:'Hear English, type it back' },
+  { id:'weak',        icon:'📊',  label:'Weak Spots',  desc:'Only cards you missed ❌' },
+  { id:'speed',       icon:'⚡',  label:'Speed Drill', desc:'30 second countdown timer' },
+  { id:'match',       icon:'🃏',  label:'Pair Match',  desc:'Match Spanish to English tiles' },
+];
+
 function fmt(n) {
   if (n >= 1_000_000_000) return (n / 1_000_000_000).toFixed(3) + 'B';
   if (n >= 1_000_000)     return (n / 1_000_000).toFixed(2) + 'M';
@@ -173,7 +185,7 @@ function ClassifiedCard({ unlocked, icon, codename, featureName, powers, progres
   );
 }
 
-export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, onToggleHideAnswer, knownCount = 0, totalCards = 896, apiKey = '', onSaveApiKey, openaiKey = '', onSaveOpenaiKey, deepseekKey = '', onSaveDeepseekKey, customEndpoint = '', onSaveCustomEndpoint, customKey = '', onSaveCustomKey, customModel = '', onSaveCustomModel, level = 1, levelPct = 0, username = '', onSaveUsername }) {
+export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, onToggleHideAnswer, knownCount = 0, totalCards = 896, apiKey = '', onSaveApiKey, openaiKey = '', onSaveOpenaiKey, deepseekKey = '', onSaveDeepseekKey, customEndpoint = '', onSaveCustomEndpoint, customKey = '', onSaveCustomKey, customModel = '', onSaveCustomModel, level = 1, levelPct = 0, username = '', onSaveUsername, studyMode = 'flip_es_en', onSaveStudyMode }) {
   const [showKey,  setShowKey]  = useState(false);
   const [showKey2, setShowKey2] = useState(false);
   const [showKey3, setShowKey3] = useState(false);
@@ -352,6 +364,32 @@ export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, on
           label="🙈 Hide Answer"
           sub="No ghost letters in WordBlast — type from pure memory"
         />
+      </div>
+
+      {/* ── FLASHCARD MODE ── */}
+      <div style={{ marginBottom: '28px' }}>
+        <SectionLabel icon="🃏" label="FLASHCARD MODE" color="#FF6B6B" />
+        <p style={{ fontSize:'10px', color:'#5e5c88', marginBottom:'12px', fontWeight:600 }}>
+          Choose how cards behave in Learn mode · tap the mode chip on Learn screen to cycle quickly
+        </p>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px' }}>
+          {STUDY_MODES.map(m => {
+            const active = studyMode === m.id;
+            return (
+              <button key={m.id} onClick={() => onSaveStudyMode?.(m.id)} style={{
+                padding:'12px', borderRadius:'14px',
+                border:`2px solid ${active ? '#FF6B6B' : '#1e1c3a'}`,
+                background: active ? 'rgba(255,107,107,0.12)' : 'rgba(255,255,255,0.03)',
+                cursor:'pointer', textAlign:'left', transition:'all .15s', fontFamily:'inherit',
+                boxShadow: active ? '0 0 14px rgba(255,107,107,0.3)' : 'none',
+              }}>
+                <div style={{ fontSize:'18px', marginBottom:'3px' }}>{m.icon}</div>
+                <div style={{ fontSize:'12px', fontWeight:900, color:active ? '#FF6B6B' : '#c8c6e8' }}>{m.label}</div>
+                <div style={{ fontSize:'10px', color:'#5e5c88', marginTop:'2px', lineHeight:1.3 }}>{m.desc}</div>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* ── SECRET VAULT ── */}
