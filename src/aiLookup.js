@@ -1,3 +1,10 @@
+const OPENROUTER_FREE_MODELS = [
+  'deepseek/deepseek-chat-v3-0324:free',
+  'google/gemma-3-12b-it:free',
+  'qwen/qwen3-8b:free',
+  'meta-llama/llama-3.2-3b-instruct:free',
+];
+
 const LOOKUP_SYSTEM = `You are a concise English-Spanish dictionary. Reply with ONLY valid JSON, no extra text:
 {"es":"Spanish translation","def":"Brief English definition (max 8 words)","ex":"One short natural example sentence"}`;
 
@@ -39,6 +46,19 @@ async function callOpenAICompatAI(endpoint, key, model, systemPrompt, userMsg, m
   return d?.choices?.[0]?.message?.content;
 }
 
+async function callOpenRouterAI(key, systemPrompt, userMsg, maxTokens) {
+  let lastErr;
+  for (const model of OPENROUTER_FREE_MODELS) {
+    try {
+      return await callOpenAICompatAI('https://openrouter.ai/api/v1/chat/completions', key, model, systemPrompt, userMsg, maxTokens);
+    } catch (e) {
+      if (e.message?.includes('No endpoints found')) { lastErr = e; continue; }
+      throw e;
+    }
+  }
+  throw lastErr;
+}
+
 function callAI(systemPrompt, userMsg, cfg, maxTokens) {
   const { provider, claudeKey, openaiKey, openrouterKey, deepseekKey, customEndpoint, customKey, customModel } = cfg;
   if (provider === 'claude' && claudeKey)
@@ -46,7 +66,7 @@ function callAI(systemPrompt, userMsg, cfg, maxTokens) {
   if (provider === 'openai' && openaiKey)
     return callOpenAICompatAI('https://api.openai.com/v1/chat/completions', openaiKey, 'gpt-4o-mini', systemPrompt, userMsg, maxTokens);
   if (provider === 'openrouter' && openrouterKey)
-    return callOpenAICompatAI('https://openrouter.ai/api/v1/chat/completions', openrouterKey, 'mistralai/mistral-7b-instruct:free', systemPrompt, userMsg, maxTokens);
+    return callOpenRouterAI(openrouterKey, systemPrompt, userMsg, maxTokens);
   if (provider === 'deepseek' && deepseekKey)
     return callOpenAICompatAI('https://api.deepseek.com/chat/completions', deepseekKey, 'deepseek-chat', systemPrompt, userMsg, maxTokens);
   if (provider === 'custom' && customKey && customEndpoint && customModel)
