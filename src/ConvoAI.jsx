@@ -6,6 +6,7 @@ const PROVIDERS = {
   claude:   { label:'Claude',   icon:'🟣', color:'#C96442', placeholder:'sk-ant-...',  hint:'console.anthropic.com' },
   openai:   { label:'ChatGPT',  icon:'🟢', color:'#10A37F', placeholder:'sk-...',       hint:'platform.openai.com/api-keys' },
   deepseek: { label:'DeepSeek', icon:'🔵', color:'#4D6EFF', placeholder:'sk-...',       hint:'platform.deepseek.com' },
+  custom:   { label:'Custom',   icon:'⚙️', color:'#9B59B6', placeholder:'sk-...',       hint:'Any OpenAI-compatible API' },
 };
 const PROVIDER_KEYS = Object.keys(PROVIDERS);
 const LS_PROVIDER   = 'lucid_ai_provider';
@@ -56,7 +57,7 @@ function TypingDots() {
 
 const hasSpeechRecognition = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
 
-export default function ConvoAI({ apiKey, openaiKey, deepseekKey, voices, themeColor, onBack }) {
+export default function ConvoAI({ apiKey, openaiKey, deepseekKey, customEndpoint, customKey, customModel, voices, themeColor, onBack }) {
   const [provider, setProvider] = useState(() => {
     const saved = localStorage.getItem(LS_PROVIDER);
     return PROVIDER_KEYS.includes(saved) ? saved : 'claude';
@@ -72,7 +73,7 @@ export default function ConvoAI({ apiKey, openaiKey, deepseekKey, voices, themeC
   const inputRef       = useRef(null);
   const recognitionRef = useRef(null);
 
-  const keys = { claude: apiKey, openai: openaiKey, deepseek: deepseekKey };
+  const keys = { claude: apiKey, openai: openaiKey, deepseek: deepseekKey, custom: customKey };
   const activeKey = keys[provider] || '';
   const prov = PROVIDERS[provider];
 
@@ -122,6 +123,9 @@ export default function ConvoAI({ apiKey, openaiKey, deepseekKey, voices, themeC
         reply = await callOpenAICompat('https://api.openai.com/v1/chat/completions', activeKey, 'gpt-4o-mini', history);
       } else if (provider === 'deepseek') {
         reply = await callOpenAICompat('https://api.deepseek.com/chat/completions', activeKey, 'deepseek-chat', history);
+      } else if (provider === 'custom') {
+        if (!customEndpoint || !customModel) throw new Error('Set endpoint + model in ⚙️ Settings → AI CHAT → Custom');
+        reply = await callOpenAICompat(customEndpoint, activeKey, customModel, history);
       }
       reply = reply || "Sorry, I didn't catch that. Try again?";
       setMessages(prev => [...prev, { role:'ai', text: reply }]);
@@ -184,8 +188,8 @@ export default function ConvoAI({ apiKey, openaiKey, deepseekKey, voices, themeC
         </div>
       </div>
 
-      {/* Provider selector */}
-      <div style={{ flexShrink:0, display:'flex', gap:'6px', padding:'0 18px 10px', borderBottom:'1px solid #1a1835' }}>
+      {/* Provider selector — 2×2 grid */}
+      <div style={{ flexShrink:0, display:'grid', gridTemplateColumns:'1fr 1fr', gap:'6px', padding:'0 18px 10px', borderBottom:'1px solid #1a1835' }}>
         {PROVIDER_KEYS.map(p => {
           const pv = PROVIDERS[p];
           const active = p === provider;
@@ -207,11 +211,14 @@ export default function ConvoAI({ apiKey, openaiKey, deepseekKey, voices, themeC
         })}
       </div>
 
-      {/* No API key banner */}
-      {!activeKey && (
+      {/* No API key / config banner */}
+      {(!activeKey || (provider === 'custom' && (!customEndpoint || !customModel))) && (
         <div style={{ margin:'10px 16px 4px', padding:'12px 14px', background:'rgba(255,200,0,0.08)', border:'1px solid rgba(255,200,0,0.3)', borderRadius:'14px' }}>
-          <p style={{ fontSize:'13px', color:'#FFD700', fontWeight:700 }}>🔑 {prov.label} key needed</p>
-          <p style={{ fontSize:'11px', color:'#9b99c0', marginTop:'3px' }}>Go to ⚙️ Settings → AI CHAT → paste your {prov.label} key ({prov.hint})</p>
+          <p style={{ fontSize:'13px', color:'#FFD700', fontWeight:700 }}>🔑 {prov.label} setup needed</p>
+          {provider === 'custom'
+            ? <p style={{ fontSize:'11px', color:'#9b99c0', marginTop:'3px' }}>Go to ⚙️ Settings → AI CHAT → Custom — enter your endpoint URL, model name, and API key</p>
+            : <p style={{ fontSize:'11px', color:'#9b99c0', marginTop:'3px' }}>Go to ⚙️ Settings → AI CHAT → paste your {prov.label} key ({prov.hint})</p>
+          }
         </div>
       )}
 

@@ -173,10 +173,11 @@ function ClassifiedCard({ unlocked, icon, codename, featureName, powers, progres
   );
 }
 
-export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, onToggleHideAnswer, knownCount = 0, totalCards = 896, apiKey = '', onSaveApiKey, openaiKey = '', onSaveOpenaiKey, deepseekKey = '', onSaveDeepseekKey, level = 1, levelPct = 0, username = '', onSaveUsername }) {
+export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, onToggleHideAnswer, knownCount = 0, totalCards = 896, apiKey = '', onSaveApiKey, openaiKey = '', onSaveOpenaiKey, deepseekKey = '', onSaveDeepseekKey, customEndpoint = '', onSaveCustomEndpoint, customKey = '', onSaveCustomKey, customModel = '', onSaveCustomModel, level = 1, levelPct = 0, username = '', onSaveUsername }) {
   const [showKey,  setShowKey]  = useState(false);
   const [showKey2, setShowKey2] = useState(false);
   const [showKey3, setShowKey3] = useState(false);
+  const [showKey4, setShowKey4] = useState(false);
   const godPct   = Math.min((lifetimeScore / GOD_GOAL)   * 100, 100);
   const beastPct = Math.min((bestEverStreak / BEAST_GOAL) * 100, 100);
   const godUnlocked   = lifetimeScore   >= GOD_GOAL;
@@ -305,6 +306,40 @@ export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, on
             <button onClick={() => setShowKey3(s => !s)} style={{ background:'rgba(255,255,255,0.06)', border:'1px solid #27254a', borderRadius:'10px', padding:'9px 12px', color:'#9b99c0', cursor:'pointer', fontSize:'14px' }}>{showKey3 ? '🙈' : '👁'}</button>
           </div>
           <p style={{ fontSize:'10px', color:'#3d3b60', marginTop:'5px' }}>platform.deepseek.com · very affordable</p>
+        </div>
+
+        {/* ⚙️ Custom / Any Provider */}
+        <div style={{ background:'rgba(255,255,255,0.03)', border:`1px solid ${(customKey && customEndpoint) ? '#9B59B640' : '#1e1c3a'}`, borderRadius:'16px', padding:'14px 16px', marginTop:'10px' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:'8px', marginBottom:'10px' }}>
+            <span style={{ fontSize:'14px' }}>⚙️</span>
+            <p style={{ fontSize:'13px', fontWeight:800, color:'#c8c6e8' }}>Custom / Other Provider</p>
+            {customKey && customEndpoint && customModel && <span style={{ fontSize:'10px', color:'#9B59B6', fontWeight:900, marginLeft:'auto' }}>✅ ACTIVE</span>}
+          </div>
+          <p style={{ fontSize:'10px', color:'#5e5c88', marginBottom:'10px', lineHeight:1.5 }}>
+            Groq, Mistral, Together AI, Perplexity, Ollama, or any OpenAI-compatible API
+          </p>
+
+          <p style={{ fontSize:'11px', color:'#7a789e', fontWeight:700, marginBottom:'4px' }}>Endpoint URL</p>
+          <input value={customEndpoint} onChange={e => onSaveCustomEndpoint?.(e.target.value)}
+            placeholder="https://api.groq.com/openai/v1/chat/completions"
+            style={{ width:'100%', background:'rgba(255,255,255,0.06)', border:`1px solid ${customEndpoint ? '#9B59B6' : '#27254a'}`, borderRadius:'10px', padding:'9px 12px', color:'#e8e6ff', fontSize:'12px', fontFamily:'monospace', outline:'none', boxSizing:'border-box', marginBottom:'8px' }}
+          />
+
+          <p style={{ fontSize:'11px', color:'#7a789e', fontWeight:700, marginBottom:'4px' }}>Model Name</p>
+          <input value={customModel} onChange={e => onSaveCustomModel?.(e.target.value)}
+            placeholder="llama-3.1-8b-instant"
+            style={{ width:'100%', background:'rgba(255,255,255,0.06)', border:`1px solid ${customModel ? '#9B59B6' : '#27254a'}`, borderRadius:'10px', padding:'9px 12px', color:'#e8e6ff', fontSize:'12px', fontFamily:'monospace', outline:'none', boxSizing:'border-box', marginBottom:'8px' }}
+          />
+
+          <p style={{ fontSize:'11px', color:'#7a789e', fontWeight:700, marginBottom:'4px' }}>API Key</p>
+          <div style={{ display:'flex', gap:'8px', alignItems:'center' }}>
+            <input type={showKey4 ? 'text' : 'password'} value={customKey} onChange={e => onSaveCustomKey?.(e.target.value)}
+              placeholder="sk-..."
+              style={{ flex:1, background:'rgba(255,255,255,0.06)', border:`1px solid ${customKey ? '#9B59B6' : '#27254a'}`, borderRadius:'10px', padding:'9px 12px', color:'#e8e6ff', fontSize:'13px', fontFamily:'monospace', outline:'none' }}
+            />
+            <button onClick={() => setShowKey4(s => !s)} style={{ background:'rgba(255,255,255,0.06)', border:'1px solid #27254a', borderRadius:'10px', padding:'9px 12px', color:'#9b99c0', cursor:'pointer', fontSize:'14px' }}>{showKey4 ? '🙈' : '👁'}</button>
+          </div>
+          <p style={{ fontSize:'10px', color:'#3d3b60', marginTop:'6px' }}>Uses Bearer token auth — stored on this device only</p>
         </div>
       </div>
 

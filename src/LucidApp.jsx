@@ -510,17 +510,23 @@ export default function LucidApp() {
   const [hideAnswer,     _setHide]   = useState(() => LS.get('lucid_hide', false));
   // known: 'id' = rated YES ✅;  'no_id' = rated NO ❌
   const [known, setKnown] = useState(() => new Set(LS.get('lucid_known', [])));
-  const [apiKey,      setApiKey]    = useState(() => LS.get('lucid_api_key', ''));
-  const [openaiKey,   _setOpenai]   = useState(() => LS.get('lucid_openai_key', ''));
-  const [deepseekKey, _setDeepseek] = useState(() => LS.get('lucid_deepseek_key', ''));
-  const [username,    _setUser]     = useState(() => LS.get('lucid_username', ''));
+  const [apiKey,         setApiKey]     = useState(() => LS.get('lucid_api_key', ''));
+  const [openaiKey,      _setOpenai]    = useState(() => LS.get('lucid_openai_key', ''));
+  const [deepseekKey,    _setDeepseek]  = useState(() => LS.get('lucid_deepseek_key', ''));
+  const [customEndpoint, _setCustEp]    = useState(() => LS.get('lucid_custom_ep', ''));
+  const [customKey,      _setCustKey]   = useState(() => LS.get('lucid_custom_key', ''));
+  const [customModel,    _setCustMod]   = useState(() => LS.get('lucid_custom_model', ''));
+  const [username,       _setUser]      = useState(() => LS.get('lucid_username', ''));
   const [studyStreak, setStudyStreak] = useState(0);
   const studyStreakRef = useRef(0);
 
-  const saveApiKey     = useCallback((k) => { setApiKey(k);     LS.set('lucid_api_key',      k); }, []);
-  const saveOpenaiKey  = useCallback((k) => { _setOpenai(k);   LS.set('lucid_openai_key',   k); }, []);
-  const saveDeepseekKey= useCallback((k) => { _setDeepseek(k); LS.set('lucid_deepseek_key', k); }, []);
-  const saveUsername   = useCallback((n) => { _setUser(n);     LS.set('lucid_username',     n); }, []);
+  const saveApiKey       = useCallback((k) => { setApiKey(k);     LS.set('lucid_api_key',      k); }, []);
+  const saveOpenaiKey    = useCallback((k) => { _setOpenai(k);    LS.set('lucid_openai_key',   k); }, []);
+  const saveDeepseekKey  = useCallback((k) => { _setDeepseek(k); LS.set('lucid_deepseek_key', k); }, []);
+  const saveCustomEndpoint = useCallback((v) => { _setCustEp(v);  LS.set('lucid_custom_ep',    v); }, []);
+  const saveCustomKey    = useCallback((v) => { _setCustKey(v);   LS.set('lucid_custom_key',   v); }, []);
+  const saveCustomModel  = useCallback((v) => { _setCustMod(v);   LS.set('lucid_custom_model', v); }, []);
+  const saveUsername     = useCallback((n) => { _setUser(n);      LS.set('lucid_username',     n); }, []);
 
   // Properly handle both direct values and functional updaters, and persist to localStorage
   const setLifetimeScore = useCallback((v) => {
@@ -622,6 +628,9 @@ export default function LucidApp() {
               apiKey={apiKey}
               openaiKey={openaiKey}
               deepseekKey={deepseekKey}
+              customEndpoint={customEndpoint}
+              customKey={customKey}
+              customModel={customModel}
               onBack={() => setView('learn')}
             />
           )}
@@ -639,6 +648,12 @@ export default function LucidApp() {
               onSaveOpenaiKey={saveOpenaiKey}
               deepseekKey={deepseekKey}
               onSaveDeepseekKey={saveDeepseekKey}
+              customEndpoint={customEndpoint}
+              onSaveCustomEndpoint={saveCustomEndpoint}
+              customKey={customKey}
+              onSaveCustomKey={saveCustomKey}
+              customModel={customModel}
+              onSaveCustomModel={saveCustomModel}
               level={level}
               levelPct={levelPct}
               username={username}
