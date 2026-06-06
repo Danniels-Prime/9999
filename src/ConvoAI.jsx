@@ -16,15 +16,19 @@ function TypingDots() {
   );
 }
 
+const hasSpeechRecognition = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+
 export default function ConvoAI({ apiKey, voices, themeColor, onBack }) {
   const [messages, setMessages] = useState([
     { role:'ai', text:"Hey! I'm Alex 🇺🇸 Your American English practice buddy. Ask me anything — like how to use \"bet\", \"no cap\", or just chat with me in English. I've got you!" }
   ]);
-  const [input, setInput]     = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState(null);
-  const bottomRef = useRef(null);
-  const inputRef  = useRef(null);
+  const [input, setInput]       = useState('');
+  const [loading, setLoading]   = useState(false);
+  const [listening, setListening] = useState(false);
+  const [error, setError]       = useState(null);
+  const bottomRef    = useRef(null);
+  const inputRef     = useRef(null);
+  const recognitionRef = useRef(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior:'smooth' });
@@ -41,26 +45,22 @@ export default function ConvoAI({ apiKey, voices, themeColor, onBack }) {
     synth.speak(utt);
   }, [voices]);
 
-  const send = async () => {
-    const text = input.trim();
+  const sendText = useCallback(async (text) => {
     if (!text || loading) return;
     if (!apiKey) { setError('no_key'); return; }
 
     setError(null);
     const userMsg = { role:'user', text };
-    const nextMessages = [...messages, userMsg];
-    setMessages(nextMessages);
-    setInput('');
-    setLoading(true);
-    inputRef.current?.focus();
+    setMessages(prev => {
+      const nextMessages = [...prev, userMsg];
 
-    // Build history for API (exclude first AI greeting from history)
-    const history = nextMessages
-      .filter((_, i) => !(i === 0 && nextMessages[0].role === 'ai'))
-      .map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.text }));
+      const history = nextMessages
+        .filter((_, i) => !(i === 0 && nextMessages[0].role === 'ai'))
+        .map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.text }));
 
-    try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      setLoading(true);
+
+      fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
           'x-api-key': apiKey,
@@ -74,27 +74,58 @@ export default function ConvoAI({ apiKey, voices, themeColor, onBack }) {
           system: SYSTEM_PROMPT,
           messages: history,
         }),
-      });
+      })
+        .then(res => {
+          if (!res.ok) return res.json().catch(() => ({})).then(err => { throw new Error(err?.error?.message || `HTTP ${res.status}`); });
+          return res.json();
+        })
+        .then(data => {
+          const reply = data?.content?.[0]?.text || "Sorry, I didn't catch that. Try again?";
+          setMessages(prev2 => [...prev2, { role:'ai', text: reply }]);
+          speak(reply);
+        })
+        .catch(e => setError(e.message || 'Network error'))
+        .finally(() => setLoading(false));
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error?.message || `HTTP ${res.status}`);
-      }
+      return nextMessages;
+    });
+  }, [loading, apiKey, speak]);
 
-      const data = await res.json();
-      const reply = data?.content?.[0]?.text || "Sorry, I didn't catch that. Try again?";
-      setMessages(prev => [...prev, { role:'ai', text: reply }]);
-      speak(reply);
-    } catch (e) {
-      setError(e.message || 'Network error');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const send = useCallback(() => {
+    const text = input.trim();
+    if (!text) return;
+    setInput('');
+    inputRef.current?.focus();
+    sendText(text);
+  }, [input, sendText]);
 
   const handleKey = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
   };
+
+  const stopListening = useCallback(() => {
+    recognitionRef.current?.stop();
+    setListening(false);
+  }, []);
+
+  const startListening = useCallback(() => {
+    if (!hasSpeechRecognition) return;
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const r = new SR();
+    r.lang = 'en-US';
+    r.interimResults = false;
+    r.maxAlternatives = 1;
+    r.onstart  = () => setListening(true);
+    r.onend    = () => setListening(false);
+    r.onerror  = () => setListening(false);
+    r.onresult = (e) => {
+      const transcript = e.results[0][0].transcript.trim();
+      setInput(transcript);
+      setTimeout(() => sendText(transcript), 200);
+    };
+    recognitionRef.current = r;
+    r.start();
+  }, [sendText]);
 
   const cc = themeColor;
 
@@ -160,13 +191,14 @@ export default function ConvoAI({ apiKey, voices, themeColor, onBack }) {
 
       {/* Input row */}
       <div style={{ padding:'10px 14px 14px', flexShrink:0, background:'rgba(8,7,22,0.8)', borderTop:'1px solid #1a1835' }}>
+        <style>{`@keyframes micPulse{0%,100%{box-shadow:0 0 8px rgba(255,0,110,0.3)}50%{box-shadow:0 0 22px rgba(255,0,110,0.8)}}`}</style>
         <div style={{ display:'flex', gap:'8px', alignItems:'flex-end' }}>
           <textarea
             ref={inputRef}
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKey}
-            placeholder="Type something… e.g. 'how do I use no cap?'"
+            placeholder={listening ? '🎙 Listening…' : "Type or tap 🎙 to speak…"}
             disabled={!apiKey || loading}
             rows={1}
             style={{
@@ -176,6 +208,22 @@ export default function ConvoAI({ apiKey, voices, themeColor, onBack }) {
               opacity: (!apiKey || loading) ? 0.5 : 1,
             }}
           />
+          {hasSpeechRecognition && (
+            <button
+              onClick={listening ? stopListening : startListening}
+              disabled={!apiKey || loading}
+              style={{
+                width:'44px', height:'44px', borderRadius:'14px',
+                background: listening ? 'rgba(255,0,110,0.15)' : 'rgba(255,255,255,0.04)',
+                border: `2px solid ${listening ? '#FF006E' : '#27254a'}`,
+                color: listening ? '#FF006E' : '#5e5c88',
+                fontSize:'20px', cursor:'pointer', flexShrink:0,
+                display:'flex', alignItems:'center', justifyContent:'center',
+                transition:'all .2s',
+                animation: listening ? 'micPulse 1s ease-in-out infinite' : 'none',
+              }}
+            >🎙</button>
+          )}
           <button
             onClick={send}
             disabled={!input.trim() || !apiKey || loading}
@@ -189,7 +237,7 @@ export default function ConvoAI({ apiKey, voices, themeColor, onBack }) {
           >→</button>
         </div>
         <p style={{ fontSize:'10px', color:'#3d3b60', marginTop:'6px', textAlign:'center' }}>
-          Press Enter to send · Shift+Enter for new line
+          {hasSpeechRecognition ? 'Tap 🎙 to speak · Type + Enter to send' : 'Press Enter to send · Shift+Enter for new line'}
         </p>
       </div>
     </div>

@@ -5,7 +5,7 @@ import PracticeHub from './PracticeHub';
 import Settings from './Settings';
 
 /* ── Level thresholds ── */
-const LEVEL_XP = [0,100,300,700,1500,3000,5000,8000,12000,20000,35000,50000];
+const LEVEL_XP = [0,10,30,60,110,200,350,600,1000,1500,2500,5000];
 function getLevel(xp) {
   const idx = [...LEVEL_XP].reverse().findIndex(t => xp >= t);
   return idx === -1 ? 1 : LEVEL_XP.length - idx;
