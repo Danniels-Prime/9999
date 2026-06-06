@@ -31,6 +31,13 @@ async function callClaude(key, history) {
   return d?.content?.[0]?.text;
 }
 
+const OPENROUTER_FREE_MODELS = [
+  'deepseek/deepseek-chat-v3-0324:free',
+  'google/gemma-3-12b-it:free',
+  'qwen/qwen3-8b:free',
+  'meta-llama/llama-3.2-3b-instruct:free',
+];
+
 async function callOpenAICompat(endpoint, key, model, history) {
   const res = await fetch(endpoint, {
     method: 'POST',
@@ -43,6 +50,19 @@ async function callOpenAICompat(endpoint, key, model, history) {
   if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e?.error?.message || `HTTP ${res.status}`); }
   const d = await res.json();
   return d?.choices?.[0]?.message?.content;
+}
+
+async function callOpenRouterFallback(key, history) {
+  let lastErr;
+  for (const model of OPENROUTER_FREE_MODELS) {
+    try {
+      return await callOpenAICompat('https://openrouter.ai/api/v1/chat/completions', key, model, history);
+    } catch (e) {
+      if (e.message?.includes('No endpoints found')) { lastErr = e; continue; }
+      throw e;
+    }
+  }
+  throw lastErr;
 }
 
 function TypingDots() {
@@ -181,7 +201,7 @@ export default function ConvoAI({ apiKey, openaiKey, openrouterKey, deepseekKey,
       } else if (provider === 'openai') {
         reply = await callOpenAICompat('https://api.openai.com/v1/chat/completions', activeKey, 'gpt-4o-mini', history);
       } else if (provider === 'openrouter') {
-        reply = await callOpenAICompat('https://openrouter.ai/api/v1/chat/completions', activeKey, 'mistralai/mistral-7b-instruct:free', history);
+        reply = await callOpenRouterFallback(activeKey, history);
       } else if (provider === 'deepseek') {
         reply = await callOpenAICompat('https://api.deepseek.com/chat/completions', activeKey, 'deepseek-chat', history);
       } else if (provider === 'custom') {
