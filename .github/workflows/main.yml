@@ -42,3 +42,9 @@ jobs:
           git diff --staged --quiet && echo "No changes" && exit 0
           git commit -m "Auto-deploy from main @ $(git rev-parse --short ORIG_HEAD 2>/dev/null || echo latest)"
           git push origin claude/lucid-dreamland-spanish-learners-hSjDS
+
+      - name: Deployment summary
+        run: |
+          echo "## ✅ LucidLand Deployed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🌐 **[Open App → danniels-prime.github.io/9999/](https://danniels-prime.github.io/9999/)**" >> $GITHUB_STEP_SUMMARY
