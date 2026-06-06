@@ -1,8 +1,22 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { PHRASES, SLANG, CATEGORY_THEMES, TOTAL_PHRASES, TOTAL_SLANG } from './langData';
 import WordBlast from './WordBlast';
-import SpeakCoach from './SpeakCoach';
+import PracticeHub from './PracticeHub';
 import Settings from './Settings';
+
+/* ── Level thresholds ── */
+const LEVEL_XP = [0,100,300,700,1500,3000,5000,8000,12000,20000,35000,50000];
+function getLevel(xp) {
+  const idx = [...LEVEL_XP].reverse().findIndex(t => xp >= t);
+  return idx === -1 ? 1 : LEVEL_XP.length - idx;
+}
+function getLevelPct(xp) {
+  const lvl = getLevel(xp);
+  const floor = LEVEL_XP[lvl - 1] ?? 0;
+  const ceil  = LEVEL_XP[lvl] ?? Infinity;
+  if (ceil === Infinity) return 100;
+  return Math.min(((xp - floor) / (ceil - floor)) * 100, 100);
+}
 
 /* ── Persistent store ── */
 const LS = {
@@ -165,7 +179,7 @@ function MiniWave({ color }) {
 function LangCard({ item, theme, isFlipped, onFlip, index, godMode, isPlaying, onSpeak, rateStatus, onRate }) {
   const cc    = godMode ? '#FFD700' : theme.color;
   const fs_es = item.es.length > 26 ? '11px' : item.es.length > 18 ? '13px' : item.es.length > 12 ? '15px' : '17px';
-  const fs_en = item.en.length > 26 ? '10px' : item.en.length > 18 ? '12px' : item.en.length > 12 ? '13px' : '15px';
+  const fs_en = item.en.length > 30 ? '16px' : item.en.length > 20 ? '19px' : item.en.length > 12 ? '22px' : '26px';
 
   const isKnown = rateStatus === 'yes';
   const isMissed = rateStatus === 'no';
@@ -208,7 +222,12 @@ function LangCard({ item, theme, isFlipped, onFlip, index, godMode, isPlaying, o
 
           {/* English answer */}
           <div style={{ fontSize: '10px', color: cc, fontWeight: 800, letterSpacing: '0.8px' }}>🇺🇸 EN</div>
-          <div style={{ fontSize: fs_en, fontWeight: 900, color: cc, lineHeight: 1.3, textShadow: `0 0 10px ${cc}` }}>
+          <div style={{
+            fontSize: fs_en, fontWeight: 900, color: cc, lineHeight: 1.25,
+            textShadow: `0 0 20px ${cc}, 0 0 40px ${cc}60`,
+            letterSpacing: '-0.3px',
+            padding: '4px 0 2px',
+          }}>
             {item.en}
           </div>
           {item.meaning && (
@@ -272,7 +291,7 @@ function LangCard({ item, theme, isFlipped, onFlip, index, godMode, isPlaying, o
 }
 
 /* ── Learn View ── */
-function LearnView({ godMode, voices, known, onRate, onThemeChange }) {
+function LearnView({ godMode, voices, known, onRate, onThemeChange, level, levelPct, lifetimeScore }) {
   const [mode, setMode]           = useState('phrases');
   const [activeCat, setActiveCat] = useState(null);
   const [flipped, setFlipped]     = useState(new Set());
@@ -347,7 +366,23 @@ function LearnView({ godMode, voices, known, onRate, onThemeChange }) {
         }}>
           {godMode ? '👁 LucidLand OMEGA' : 'LucidLand 🌙'}
         </h1>
-        <p style={{ color: '#5e5c88', fontSize: '11px', fontWeight: 700, marginTop: '2px' }}>
+        {/* XP Level bar */}
+        <div style={{ display:'flex', alignItems:'center', gap:'8px', marginTop:'5px', padding:'0 4px' }}>
+          <span style={{ fontSize:'10px', fontWeight:900, color: godMode ? '#FFD700' : themeColor, whiteSpace:'nowrap' }}>
+            Lv {level}
+          </span>
+          <div style={{ flex:1, height:'5px', background:'#1a1835', borderRadius:'3px', overflow:'hidden' }}>
+            <div style={{
+              height:'100%', width:`${levelPct}%`, borderRadius:'3px', transition:'width .6s ease',
+              background: godMode ? '#FFD700' : themeColor,
+              boxShadow: `0 0 8px ${godMode ? '#FFD700' : themeColor}80`,
+            }}/>
+          </div>
+          <span style={{ fontSize:'10px', color:'#5e5c88', fontWeight:700, whiteSpace:'nowrap' }}>
+            {lifetimeScore >= 1000 ? `${(lifetimeScore/1000).toFixed(1)}K` : lifetimeScore} XP
+          </span>
+        </div>
+        <p style={{ color: '#5e5c88', fontSize: '10px', fontWeight: 700, marginTop: '3px' }}>
           {TOTAL_PHRASES + TOTAL_SLANG} cards · flip → hear 🔊 · ¿Lo sabías? ✅❌
           {godMode && <span style={{ color: '#FFD700', marginLeft: '6px' }}>· LEGENDARY</span>}
         </p>
@@ -437,7 +472,7 @@ function BottomNav({ view, setView, themeColor }) {
   const tabs = [
     { id: 'learn',    icon: '🌙', label: 'Learn' },
     { id: 'blast',    icon: '🚀', label: 'WordBlast' },
-    { id: 'speak',    icon: '🎤', label: 'SpeakCoach' },
+    { id: 'speak',    icon: '🎯', label: 'Practice' },
     { id: 'settings', icon: '⚙️', label: 'Settings' },
   ];
   return (
@@ -464,6 +499,8 @@ export default function LucidApp() {
   const [hideAnswer,     _setHide]   = useState(() => LS.get('lucid_hide', false));
   // known: 'id' = rated YES ✅;  'no_id' = rated NO ❌
   const [known, setKnown] = useState(() => new Set(LS.get('lucid_known', [])));
+  const [apiKey, setApiKey] = useState(() => LS.get('lucid_api_key', ''));
+  const saveApiKey = useCallback((k) => { setApiKey(k); LS.set('lucid_api_key', k); }, []);
 
   const setLifetimeScore  = v => { _setXP(v);     LS.set('lucid_xp', v); };
   const setBestEverStreak = v => { _setStreak(v); LS.set('lucid_streak', v); };
@@ -481,8 +518,9 @@ export default function LucidApp() {
 
   const godMode   = lifetimeScore  >= 9_999_999_999;
   const beastMode = bestEverStreak >= 50;
-  // Count only YES-rated cards (not 'no_' prefixed)
   const knownCount = [...known].filter(id => !id.startsWith('no_')).length;
+  const level    = getLevel(lifetimeScore);
+  const levelPct = getLevelPct(lifetimeScore);
 
   const handleGameEnd = useCallback(({ score, streak }) => {
     setLifetimeScore(prev => prev + score);
@@ -524,6 +562,9 @@ export default function LucidApp() {
               known={known}
               onRate={markCard}
               onThemeChange={setAppColor}
+              level={level}
+              levelPct={levelPct}
+              lifetimeScore={lifetimeScore}
             />
           )}
           {view === 'blast' && (
@@ -538,9 +579,10 @@ export default function LucidApp() {
             />
           )}
           {view === 'speak' && (
-            <SpeakCoach
+            <PracticeHub
               themeColor={themeColor}
               voices={voices}
+              apiKey={apiKey}
               onBack={() => setView('learn')}
             />
           )}
@@ -552,6 +594,10 @@ export default function LucidApp() {
               onToggleHideAnswer={toggleHideAnswer}
               knownCount={knownCount}
               totalCards={TOTAL_PHRASES + TOTAL_SLANG}
+              apiKey={apiKey}
+              onSaveApiKey={saveApiKey}
+              level={level}
+              levelPct={levelPct}
             />
           )}
         </div>

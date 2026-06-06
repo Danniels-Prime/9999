@@ -173,7 +173,8 @@ function ClassifiedCard({ unlocked, icon, codename, featureName, powers, progres
   );
 }
 
-export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, onToggleHideAnswer, knownCount = 0, totalCards = 896 }) {
+export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, onToggleHideAnswer, knownCount = 0, totalCards = 896, apiKey = '', onSaveApiKey, level = 1, levelPct = 0 }) {
+  const [showKey, setShowKey] = useState(false);
   const godPct   = Math.min((lifetimeScore / GOD_GOAL)   * 100, 100);
   const beastPct = Math.min((bestEverStreak / BEAST_GOAL) * 100, 100);
   const godUnlocked   = lifetimeScore   >= GOD_GOAL;
@@ -200,6 +201,52 @@ export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, on
       {/* Header */}
       <div style={{ padding: '18px 0 12px', textAlign: 'center' }}>
         <h1 style={{ fontSize: '24px', fontWeight: 900, color: '#c8c6e8' }}>⚙️ Settings</h1>
+      </div>
+
+      {/* ── LEVEL ── */}
+      <div style={{ marginBottom: '24px' }}>
+        <SectionLabel icon="⭐" label="YOUR LEVEL" color="#FFD700" />
+        <div style={{ background:'rgba(255,255,255,0.03)', border:'1px solid #1e1c3a', borderRadius:'16px', padding:'14px 16px' }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'8px' }}>
+            <span style={{ fontSize:'22px', fontWeight:900, color:'#FFD700' }}>Level {level}</span>
+            <span style={{ fontSize:'13px', color:'#9b99c0', fontWeight:700 }}>{fmt(lifetimeScore)} XP</span>
+          </div>
+          <div style={{ height:'8px', background:'#1a1835', borderRadius:'4px', overflow:'hidden' }}>
+            <div style={{ height:'100%', width:`${levelPct}%`, background:'#FFD700', borderRadius:'4px', transition:'width .6s', boxShadow: levelPct > 0 ? '0 0 10px #FFD70080' : 'none' }}/>
+          </div>
+          <p style={{ fontSize:'10px', color:'#3d3b60', marginTop:'5px' }}>
+            Earn XP in WordBlast to level up · Level {level + 1} requires more correct answers
+          </p>
+        </div>
+      </div>
+
+      {/* ── AI CHAT ── */}
+      <div style={{ marginBottom: '28px' }}>
+        <SectionLabel icon="🤖" label="AI CHAT" color="#00F5D4" />
+        <div style={{ background:'rgba(255,255,255,0.03)', border:'1px solid #1e1c3a', borderRadius:'16px', padding:'14px 16px' }}>
+          <p style={{ fontSize:'13px', fontWeight:800, color:'#c8c6e8', marginBottom:'8px' }}>Claude API Key</p>
+          <div style={{ display:'flex', gap:'8px', alignItems:'center' }}>
+            <input
+              type={showKey ? 'text' : 'password'}
+              value={apiKey}
+              onChange={e => onSaveApiKey?.(e.target.value)}
+              placeholder="sk-ant-..."
+              style={{
+                flex:1, background:'rgba(255,255,255,0.06)', border:`1px solid ${apiKey ? '#00F5D4' : '#27254a'}`,
+                borderRadius:'10px', padding:'9px 12px', color:'#e8e6ff', fontSize:'13px',
+                fontFamily:'monospace', outline:'none',
+              }}
+            />
+            <button onClick={() => setShowKey(s => !s)} style={{
+              background:'rgba(255,255,255,0.06)', border:'1px solid #27254a', borderRadius:'10px',
+              padding:'9px 12px', color:'#9b99c0', cursor:'pointer', fontSize:'14px',
+            }}>{showKey ? '🙈' : '👁'}</button>
+          </div>
+          <p style={{ fontSize:'10px', color:'#3d3b60', marginTop:'6px' }}>
+            Get your key at console.anthropic.com · stored on this device only
+          </p>
+          {apiKey && <p style={{ fontSize:'10px', color:'#00F5D4', marginTop:'3px', fontWeight:700 }}>✅ Key saved — Chat AI is ready in Practice tab</p>}
+        </div>
       </div>
 
       {/* ── GAMEPLAY ── */}
