@@ -2,8 +2,15 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="/9999/icon-192.png" />
+    <link rel="apple-touch-icon" href="/9999/icon-192.png" />
+    <link rel="manifest" href="/9999/manifest.json" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#7C3AED" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="LucidLand" />
+    <meta name="description" content="Learn American English from Spanish — flashcards, AI chat, and story dialogues" />
     <title>LucidLand</title>
     <script type="module">(function(){const x=document.createElement("link").relList;if(x&&x.supports&&x.supports("modulepreload"))return;for(const w of document.querySelectorAll('link[rel="modulepreload"]'))k(w);new MutationObserver(w=>{for(const j of w)if(j.type==="childList")for(const N of j.addedNodes)N.tagName==="LINK"&&N.rel==="modulepreload"&&k(N)}).observe(document,{childList:!0,subtree:!0});function u(w){const j={};return w.integrity&&(j.integrity=w.integrity),w.referrerPolicy&&(j.referrerPolicy=w.referrerPolicy),w.crossOrigin==="use-credentials"?j.credentials="include":w.crossOrigin==="anonymous"?j.credentials="omit":j.credentials="same-origin",j}function k(w){if(w.ep)return;w.ep=!0;const j=u(w);fetch(w.href,j)}})();var Oa={exports:{}},Po={},Ha={exports:{}},be={};/**
  * @license React
@@ -145,5 +152,11 @@ Error generating stack: `+s.message+`
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      if ('serviceWorker' in navigator)
+        window.addEventListener('load', () =>
+          navigator.serviceWorker.register('/9999/sw.js').catch(() => {})
+        );
+    </script>
   </body>
 </html>
