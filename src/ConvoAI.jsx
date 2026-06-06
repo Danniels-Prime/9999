@@ -58,7 +58,7 @@ async function callOpenRouterFallback(key, history) {
     try {
       return await callOpenAICompat('https://openrouter.ai/api/v1/chat/completions', key, model, history);
     } catch (e) {
-      if (e.message?.includes('No endpoints found')) { lastErr = e; continue; }
+      if (e.message?.includes('No endpoints found') || e.message?.includes('Provider returned error')) { lastErr = e; continue; }
       throw e;
     }
   }
