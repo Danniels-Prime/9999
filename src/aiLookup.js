@@ -52,7 +52,7 @@ async function callOpenRouterAI(key, systemPrompt, userMsg, maxTokens) {
     try {
       return await callOpenAICompatAI('https://openrouter.ai/api/v1/chat/completions', key, model, systemPrompt, userMsg, maxTokens);
     } catch (e) {
-      if (e.message?.includes('No endpoints found')) { lastErr = e; continue; }
+      if (e.message?.includes('No endpoints found') || e.message?.includes('Provider returned error')) { lastErr = e; continue; }
       throw e;
     }
   }
