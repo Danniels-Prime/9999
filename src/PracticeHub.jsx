@@ -54,7 +54,7 @@ export default function PracticeHub({ themeColor, voices, apiKey, openaiKey, dee
           <ConvoAI themeColor={themeColor} voices={voices} apiKey={apiKey} openaiKey={openaiKey} deepseekKey={deepseekKey} customEndpoint={customEndpoint} customKey={customKey} customModel={customModel} onBack={() => switchMode('speak')} />
         )}
         {mode === 'stories' && (
-          <StoryDialogues themeColor={themeColor} voices={voices} onBack={() => switchMode('speak')} />
+          <StoryDialogues themeColor={themeColor} voices={voices} onBack={() => switchMode('speak')} apiKey={apiKey} openaiKey={openaiKey} deepseekKey={deepseekKey} customEndpoint={customEndpoint} customKey={customKey} customModel={customModel} />
         )}
       </div>
     </div>

@@ -1,4 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import WordPopup from './WordPopup';
+import TappableText from './TappableText';
+import { lookupWordAI, translateTextAI } from './aiLookup';
 
 const SYSTEM_PROMPT = `You are Alex, a friendly American English conversation partner helping Spanish speakers practice everyday American English. You use natural American slang, expressions, and idioms. Keep responses short (2-4 sentences max). When the user types a word or phrase (like "bet" or "no cap"), explain briefly how it's used, give one quick example sentence, then continue the conversation naturally. If they make grammar errors, model the correct phrasing naturally in your reply without explicitly calling it out. Stay casual, warm, and encouraging. Never be preachy or lecture-y.`;
 
@@ -69,6 +72,15 @@ export default function ConvoAI({ apiKey, openaiKey, deepseekKey, customEndpoint
   const [loading, setLoading]     = useState(false);
   const [listening, setListening] = useState(false);
   const [error, setError]         = useState(null);
+
+  // Word popup state
+  const [popup, setPopup] = useState(null); // { word, data, loading, error }
+  const wordCacheRef = useRef({});
+
+  // Per-message translation state
+  const [translations, setTranslations] = useState({});   // { msgIdx: 'translated text' }
+  const [translating, setTranslating]   = useState({});   // { msgIdx: true }
+
   const bottomRef      = useRef(null);
   const inputRef       = useRef(null);
   const recognitionRef = useRef(null);
@@ -76,6 +88,16 @@ export default function ConvoAI({ apiKey, openaiKey, deepseekKey, customEndpoint
   const keys = { claude: apiKey, openai: openaiKey, deepseek: deepseekKey, custom: customKey };
   const activeKey = keys[provider] || '';
   const prov = PROVIDERS[provider];
+
+  const aiCfg = {
+    provider,
+    claudeKey: apiKey,
+    openaiKey,
+    deepseekKey,
+    customEndpoint,
+    customKey,
+    customModel,
+  };
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior:'smooth' });
@@ -97,6 +119,41 @@ export default function ConvoAI({ apiKey, openaiKey, deepseekKey, customEndpoint
     localStorage.setItem(LS_PROVIDER, p);
     setError(null);
   };
+
+  // Tap a word → open popup + fetch definition
+  const handleWordTap = useCallback(async (word) => {
+    const key = word.toLowerCase();
+    if (wordCacheRef.current[key]) {
+      setPopup({ word, data: wordCacheRef.current[key], loading: false, error: null });
+      return;
+    }
+    setPopup({ word, data: null, loading: true, error: null });
+    try {
+      const data = await lookupWordAI(word, aiCfg);
+      wordCacheRef.current[key] = data;
+      setPopup({ word, data, loading: false, error: null });
+    } catch (e) {
+      setPopup({ word, data: null, loading: false, error: e.message === 'no_key' ? 'no_key' : e.message });
+    }
+  }, [aiCfg]);
+
+  // Tap 🌐 on a message → translate the whole thing
+  const handleTranslate = useCallback(async (text, idx) => {
+    if (translations[idx]) {
+      // toggle off
+      setTranslations(prev => { const n = {...prev}; delete n[idx]; return n; });
+      return;
+    }
+    setTranslating(prev => ({ ...prev, [idx]: true }));
+    try {
+      const translated = await translateTextAI(text, aiCfg);
+      setTranslations(prev => ({ ...prev, [idx]: translated }));
+    } catch (e) {
+      setTranslations(prev => ({ ...prev, [idx]: e.message === 'no_key' ? '🔑 Add an AI key in Settings' : `❌ ${e.message}` }));
+    } finally {
+      setTranslating(prev => { const n = {...prev}; delete n[idx]; return n; });
+    }
+  }, [aiCfg, translations]);
 
   const sendText = useCallback(async (text) => {
     if (!text || loading) return;
@@ -176,6 +233,18 @@ export default function ConvoAI({ apiKey, openaiKey, deepseekKey, customEndpoint
 
   return (
     <div style={{ height:'100%', display:'flex', flexDirection:'column' }}>
+      {/* Word popup */}
+      {popup && (
+        <WordPopup
+          word={popup.word}
+          data={popup.data}
+          loading={popup.loading}
+          error={popup.error}
+          onClose={() => setPopup(null)}
+          themeColor={pc}
+        />
+      )}
+
       {/* Header */}
       <div style={{ display:'flex', alignItems:'center', gap:'10px', padding:'14px 18px 8px', flexShrink:0 }}>
         <button onClick={onBack} style={{ background:'none', border:'none', color:'#6b69a0', fontSize:'20px', cursor:'pointer', padding:'4px' }}>←</button>
@@ -184,7 +253,7 @@ export default function ConvoAI({ apiKey, openaiKey, deepseekKey, customEndpoint
           <p style={{ fontSize:'16px', fontWeight:900, color:pc, textShadow:`0 0 14px ${pc}` }}>
             Alex — {prov.label}
           </p>
-          <p style={{ fontSize:'10px', color:'#5e5c88', fontWeight:700 }}>Practice natural American English</p>
+          <p style={{ fontSize:'10px', color:'#5e5c88', fontWeight:700 }}>Tap any word to translate · 🌐 for full message</p>
         </div>
       </div>
 
@@ -211,7 +280,7 @@ export default function ConvoAI({ apiKey, openaiKey, deepseekKey, customEndpoint
         })}
       </div>
 
-      {/* No API key / config banner */}
+      {/* No API key banner */}
       {(!activeKey || (provider === 'custom' && (!customEndpoint || !customModel))) && (
         <div style={{ margin:'10px 16px 4px', padding:'12px 14px', background:'rgba(255,200,0,0.08)', border:'1px solid rgba(255,200,0,0.3)', borderRadius:'14px' }}>
           <p style={{ fontSize:'13px', color:'#FFD700', fontWeight:700 }}>🔑 {prov.label} setup needed</p>
@@ -228,26 +297,65 @@ export default function ConvoAI({ apiKey, openaiKey, deepseekKey, customEndpoint
           <div key={i} style={{
             display:'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start',
             marginBottom:'10px', animation:'fadeUp .25s ease both',
+            flexDirection: m.role === 'ai' ? 'row' : 'row-reverse',
+            alignItems:'flex-end', gap:'6px',
           }}>
             {m.role === 'ai' && (
-              <span style={{ fontSize:'20px', marginRight:'6px', flexShrink:0, alignSelf:'flex-end', marginBottom:'2px' }}>🇺🇸</span>
+              <span style={{ fontSize:'20px', flexShrink:0, marginBottom:'2px' }}>🇺🇸</span>
             )}
-            <div style={{
-              maxWidth:'78%', padding:'10px 14px',
-              borderRadius: m.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-              background: m.role === 'user' ? `${cc}22` : 'rgba(255,255,255,0.05)',
-              border: `1px solid ${m.role === 'user' ? cc + '50' : 'rgba(255,255,255,0.08)'}`,
-              color: m.role === 'user' ? cc : '#d4d2f0',
-              fontSize:'14px', fontWeight:600, lineHeight:1.5,
-            }}>
-              {m.text}
+            <div style={{ maxWidth:'78%', display:'flex', flexDirection:'column', gap:'4px',
+              alignItems: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
+              {/* Bubble */}
+              <div style={{
+                padding:'10px 14px',
+                borderRadius: m.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                background: m.role === 'user' ? `${cc}22` : 'rgba(255,255,255,0.05)',
+                border: `1px solid ${m.role === 'user' ? cc + '50' : 'rgba(255,255,255,0.08)'}`,
+                fontSize:'14px', fontWeight:600, lineHeight:1.5,
+              }}>
+                <TappableText
+                  text={m.text}
+                  onWordTap={handleWordTap}
+                  accentColor={m.role === 'user' ? cc : '#a09ec8'}
+                  baseStyle={{ color: m.role === 'user' ? cc : '#d4d2f0' }}
+                />
+              </div>
+
+              {/* AI message: translate button + result */}
+              {m.role === 'ai' && (
+                <div style={{ display:'flex', flexDirection:'column', gap:'4px' }}>
+                  <button
+                    onClick={() => handleTranslate(m.text, i)}
+                    style={{
+                      alignSelf:'flex-start',
+                      padding:'3px 10px', borderRadius:'20px',
+                      border:`1px solid ${translating[i] ? cc + '60' : '#27254a'}`,
+                      background: translations[i] ? `${cc}15` : 'rgba(255,255,255,0.03)',
+                      color: translations[i] ? cc : '#5e5c88',
+                      fontSize:'10px', fontWeight:800, cursor:'pointer', fontFamily:'inherit',
+                      transition:'all .15s',
+                    }}
+                  >
+                    {translating[i] ? '⏳ translating…' : translations[i] ? '🌐 hide' : '🌐 translate'}
+                  </button>
+                  {translations[i] && (
+                    <div style={{
+                      padding:'8px 12px', borderRadius:'12px',
+                      background:`${cc}10`, border:`1px solid ${cc}25`,
+                    }}>
+                      <p style={{ fontSize:'9px', color:cc, fontWeight:800, marginBottom:'3px', letterSpacing:'0.06em' }}>🇪🇸 EN ESPAÑOL</p>
+                      <p style={{ fontSize:'13px', color:'#c8c6e8', fontWeight:600, lineHeight:1.45 }}>{translations[i]}</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         ))}
 
         {loading && (
-          <div style={{ display:'flex', alignItems:'flex-end', marginBottom:'10px' }}>
-            <span style={{ fontSize:'20px', marginRight:'6px' }}>🇺🇸</span>
+          <div style={{ display:'flex', alignItems:'flex-end', marginBottom:'10px', gap:'6px' }}>
+            <span style={{ fontSize:'20px' }}>🇺🇸</span>
             <div style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:'18px 18px 18px 4px' }}>
               <TypingDots />
             </div>
@@ -312,7 +420,7 @@ export default function ConvoAI({ apiKey, openaiKey, deepseekKey, customEndpoint
           >→</button>
         </div>
         <p style={{ fontSize:'10px', color:'#3d3b60', marginTop:'6px', textAlign:'center' }}>
-          {hasSpeechRecognition ? `Tap 🎙 to speak · Enter to send · ${prov.icon} ${prov.label}` : `Enter to send · ${prov.icon} ${prov.label}`}
+          {hasSpeechRecognition ? `Tap 🎙 · tap any word to look it up · ${prov.icon} ${prov.label}` : `Tap any word to look it up · ${prov.icon} ${prov.label}`}
         </p>
       </div>
     </div>
