@@ -5,6 +5,7 @@ import PracticeHub from './PracticeHub';
 import Settings from './Settings';
 import LearnView from './LearnView';
 import FrequencyView from './FrequencyView';
+import QuizView from './QuizView';
 
 /* ── ÆTHERMIND color palette ── */
 const C = {
@@ -241,10 +242,10 @@ function HzBanner({ hz, color, onStop }) {
 }
 
 /* ── Bottom Nav (ÆTHERMIND style, 5 tabs) ── */
-function BottomNav({ view, setView, themeColor, hz }) {
+function BottomNav({ view, setView, themeColor, hz, dueCount }) {
   const tabs = [
     { id:'learn',    icon:'🌙', label:'Learn'    },
-    { id:'blast',    icon:'⚡', label:'WordBlast' },
+    { id:'quiz',     icon:'🎴', label: dueCount > 0 ? `Quiz (${dueCount})` : 'Quiz' },
     { id:'freq',     icon:'〰', label: hz ? `${hz}Hz` : 'Freq' },
     { id:'speak',    icon:'🎯', label:'Practice'  },
     { id:'settings', icon:'⚙', label:'More'      },
@@ -351,6 +352,13 @@ export default function LucidApp() {
   const level    = getLevel(lifetimeScore);
   const levelPct = getLevelPct(lifetimeScore);
 
+  // Due card count for Quiz tab badge
+  const dueCount = (() => {
+    const now = Date.now();
+    const all = [...Object.values(PHRASES).flat(), ...Object.values(SLANG).flat()];
+    return Math.min(all.filter(v => { const s = srs[v.id]; return !s || now >= s.nextReview; }).length, 20);
+  })();
+
   const handleGameEnd = useCallback(({ score, streak }) => {
     setLifetimeScore(prev => prev + score);
     setBestEverStreak(prev => Math.max(prev, streak));
@@ -402,6 +410,17 @@ export default function LucidApp() {
               username={username}
               studyMode={studyMode}
               onStudyModeChange={saveStudyMode}
+            />
+          )}
+          {view === 'quiz' && (
+            <QuizView
+              srs={srs}
+              known={known}
+              onRate={markCard}
+              themeColor={themeColor}
+              godMode={godMode}
+              studyMode={studyMode}
+              voices={voices}
             />
           )}
           {view === 'blast' && (
@@ -471,7 +490,7 @@ export default function LucidApp() {
             />
           )}
         </div>
-        <BottomNav view={view} setView={setView} themeColor={themeColor} hz={hz} />
+        <BottomNav view={view} setView={setView} themeColor={themeColor} hz={hz} dueCount={dueCount} />
       </div>
     </div>
   );
