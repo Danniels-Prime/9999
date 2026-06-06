@@ -6,19 +6,15 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
+  contents: write
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -34,18 +30,15 @@ jobs:
       - name: Inline JS into index.html (single-file deploy)
         run: python3 inline_build.py
 
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - uses: actions/configure-pages@v4
-      - uses: actions/deploy-pages@v4
-        id: deployment
-
+      - name: Push to Pages branch
+        run: |
+          cp dist/index.html /tmp/lucid_index.html
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin claude/lucid-dreamland-spanish-learners-hSjDS
+          git checkout claude/lucid-dreamland-spanish-learners-hSjDS
+          cp /tmp/lucid_index.html index.html
+          git add index.html
+          git diff --staged --quiet && echo "No changes to deploy" && exit 0
+          git commit -m "Auto-deploy from main @ $(git rev-parse --short ORIG_HEAD 2>/dev/null || echo latest)"
+          git push origin claude/lucid-dreamland-spanish-learners-hSjDS
