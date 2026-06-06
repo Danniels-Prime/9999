@@ -3,6 +3,7 @@ import { PHRASES, SLANG, CATEGORY_THEMES, TOTAL_PHRASES, TOTAL_SLANG } from './l
 import WordBlast from './WordBlast';
 import PracticeHub from './PracticeHub';
 import Settings from './Settings';
+import LearnView from './LearnView';
 
 /* ── Level thresholds ── */
 const LEVEL_XP = [0,10,30,60,110,200,350,600,1000,1500,2500,5000];
@@ -160,324 +161,6 @@ function Nebulae({ color, godMode }) {
   );
 }
 
-/* ── Mini wave bars for audio indicator ── */
-function MiniWave({ color }) {
-  return (
-    <span style={{ display:'inline-flex', gap:'2px', alignItems:'center', height:'14px' }}>
-      {[0, 1, 2].map(i => (
-        <span key={i} style={{
-          display: 'inline-block', width: '2px', height: '100%',
-          borderRadius: '1px', background: color, transformOrigin: 'bottom',
-          animation: `waveBar .7s ${i * 0.12}s ease-in-out infinite`,
-        }} />
-      ))}
-    </span>
-  );
-}
-
-/* ── Lang Card ── */
-function LangCard({ item, theme, isFlipped, onFlip, index, godMode, isPlaying, onSpeak, rateStatus, onRate }) {
-  const cc    = godMode ? '#FFD700' : theme.color;
-  const fs_es = item.es.length > 26 ? '11px' : item.es.length > 18 ? '13px' : item.es.length > 12 ? '15px' : '17px';
-  const fs_en = item.en.length > 30 ? '16px' : item.en.length > 20 ? '19px' : item.en.length > 12 ? '22px' : '26px';
-
-  const isKnown = rateStatus === 'yes';
-  const isMissed = rateStatus === 'no';
-
-  return (
-    <div
-      className={`lang-card${isFlipped ? ' flipped' : ''}${godMode ? ' god-mode' : ''}${isKnown ? ' known-glow' : ''}`}
-      role="button"
-      tabIndex={0}
-      style={{ '--cc': cc, '--cg': theme.glow, '--cd': theme.dim, animationDelay: `${index * 0.022}s` }}
-      onClick={onFlip}
-      onKeyDown={e => e.key === 'Enter' && onFlip()}
-    >
-      <div className="card-glow" />
-      {isFlipped && <div className="ripple-ring" />}
-
-      {/* Known / missed badge */}
-      {(isKnown || isMissed) && !isFlipped && (
-        <div style={{
-          position: 'absolute', top: '6px', right: '7px', fontSize: '11px',
-          lineHeight: 1, pointerEvents: 'none',
-          animation: 'knownPop .3s ease',
-        }}>
-          {isKnown ? '✅' : '❌'}
-        </div>
-      )}
-
-      {/* Spanish */}
-      <div style={{ fontSize: '10px', color: '#6b69a0', fontWeight: 800, letterSpacing: '0.8px' }}>🇪🇸 ES</div>
-      <div style={{
-        fontSize: fs_es, fontWeight: 900, color: '#FFD700', lineHeight: 1.3,
-        textShadow: isFlipped ? '0 0 14px #FFD70080' : 'none', transition: 'text-shadow .2s',
-      }}>
-        {item.es}
-      </div>
-
-      {isFlipped ? (
-        <>
-          <div style={{ width: '100%', height: '1px', background: 'rgba(255,255,255,0.07)', margin: '1px 0', flexShrink: 0 }} />
-
-          {/* English answer */}
-          <div style={{ fontSize: '10px', color: cc, fontWeight: 800, letterSpacing: '0.8px' }}>🇺🇸 EN</div>
-          <div style={{
-            fontSize: fs_en, fontWeight: 900, color: cc, lineHeight: 1.25,
-            textShadow: `0 0 20px ${cc}, 0 0 40px ${cc}60`,
-            letterSpacing: '-0.3px',
-            padding: '4px 0 2px',
-          }}>
-            {item.en}
-          </div>
-          {item.meaning && (
-            <div style={{ fontSize: '9px', color: '#5e5c88', fontStyle: 'italic', lineHeight: 1.3 }}>
-              {item.meaning}
-            </div>
-          )}
-
-          {/* ── Action row: Audio + Yes/No ──
-               stopPropagation prevents the click from un-flipping the card */}
-          <div className="card-action-row" onClick={e => e.stopPropagation()}>
-
-            {/* Audio button */}
-            <button
-              className={`card-audio-btn${isPlaying ? ' playing' : ''}`}
-              style={{ '--cc': cc, '--cd': theme.dim, '--cg': theme.glow }}
-              onClick={onSpeak}
-              title="Replay audio"
-            >
-              {isPlaying ? <MiniWave color={cc} /> : '🔊'}
-            </button>
-
-            {/* ✅ YES — ¿Lo sabías? → Sí */}
-            <button
-              className={`card-rate-btn${rateStatus === 'yes' ? ' yes' : ''}`}
-              onClick={() => onRate(true)}
-              title="¡Sí lo sabía!"
-            >
-              ✅ Sí
-            </button>
-
-            {/* ❌ NO */}
-            <button
-              className={`card-rate-btn${rateStatus === 'no' ? ' no' : ''}`}
-              onClick={() => onRate(false)}
-              title="No lo sabía"
-            >
-              ❌ No
-            </button>
-          </div>
-
-          {/* Answer feedback line */}
-          {rateStatus === 'yes' && (
-            <div style={{ fontSize: '9px', color: '#00FF88', fontWeight: 700, textAlign: 'center', animation: 'ratePop .2s ease' }}>
-              🌟 ¡Lo sabías!
-            </div>
-          )}
-          {rateStatus === 'no' && (
-            <div style={{ fontSize: '9px', color: '#FF006E', fontWeight: 700, textAlign: 'center', animation: 'ratePop .2s ease' }}>
-              🔁 ¡A repasar!
-            </div>
-          )}
-        </>
-      ) : (
-        <div style={{ fontSize: '10px', color: '#3d3b60', fontWeight: 700, marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <span>👆</span> tap · hear 🔊 · rate ✅❌
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ── Learn View ── */
-function LearnView({ godMode, voices, known, onRate, onThemeChange, level, levelPct, lifetimeScore, studyStreak = 0, username = '' }) {
-  const [mode, setMode]           = useState('phrases');
-  const [activeCat, setActiveCat] = useState(null);
-  const [flipped, setFlipped]     = useState(new Set());
-  const [playingId, setPlayingId] = useState(null);
-
-  const source       = mode === 'phrases' ? PHRASES : SLANG;
-  const catKeys      = Object.keys(source);
-  const activeCatKey = activeCat || catKeys[0];
-  const theme        = CATEGORY_THEMES[activeCatKey] || {};
-  const items        = source[activeCatKey] || [];
-  const themeColor   = godMode ? '#FFD700' : (theme.color || '#00F5D4');
-
-  // Count known (yes) cards in this category
-  const catKnownCount = items.filter(it => known.has(it.id)).length;
-  const knownPct      = items.length ? (catKnownCount / items.length) * 100 : 0;
-
-  useEffect(() => { setActiveCat(null); setFlipped(new Set()); }, [mode]);
-  useEffect(() => {
-    setFlipped(new Set());
-    window.speechSynthesis?.cancel();
-    setPlayingId(null);
-    document.documentElement.style.setProperty('--app-theme', themeColor);
-    onThemeChange?.(themeColor);
-  }, [activeCatKey, themeColor, onThemeChange]);
-
-  /* Speak English with American accent */
-  const speak = useCallback((item) => {
-    window.speechSynthesis.cancel();
-    const utt = new SpeechSynthesisUtterance(item.en);
-    utt.lang  = 'en-US';
-    utt.rate  = 0.82;
-    utt.pitch = 1.05;
-    const pref = voices.find(v => v.lang === 'en-US') || voices.find(v => v.lang.startsWith('en'));
-    if (pref) utt.voice = pref;
-    utt.onstart = () => setPlayingId(item.id);
-    utt.onend   = () => setPlayingId(null);
-    utt.onerror = () => setPlayingId(null);
-    window.speechSynthesis.speak(utt);
-  }, [voices]);
-
-  /* Flip a card — auto-speak on reveal */
-  const toggleFlip = useCallback((item) => {
-    const wasFlipped = flipped.has(item.id);
-    setFlipped(prev => {
-      const next = new Set(prev);
-      wasFlipped ? next.delete(item.id) : next.add(item.id);
-      return next;
-    });
-    if (!wasFlipped) {
-      setTimeout(() => speak(item), 180);
-    } else {
-      window.speechSynthesis.cancel();
-      setPlayingId(null);
-    }
-  }, [flipped, speak]);
-
-  const getRateStatus = (id) => {
-    if (known.has(id)) return 'yes';
-    if (known.has('no_' + id)) return 'no';
-    return null;
-  };
-
-  return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
-      <header style={{ padding: '14px 20px 6px', textAlign: 'center', flexShrink: 0, background: 'linear-gradient(180deg,rgba(10,8,30,0.95) 0%,transparent 100%)' }}>
-        <h1 style={{
-          fontSize: 'clamp(20px,5.5vw,34px)', fontWeight: 900, letterSpacing: '-1px', lineHeight: 1,
-          background: `linear-gradient(120deg,${themeColor} 0%,#fff 50%,${themeColor} 100%)`,
-          backgroundSize: '200% 100%', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-          animation: 'aurora 4s linear infinite',
-        }}>
-          {godMode ? '👁 LucidLand OMEGA' : 'LucidLand 🌙'}
-        </h1>
-        {/* XP Level bar */}
-        <div style={{ display:'flex', alignItems:'center', gap:'8px', marginTop:'5px', padding:'0 4px' }}>
-          <span style={{ fontSize:'10px', fontWeight:900, color: godMode ? '#FFD700' : themeColor, whiteSpace:'nowrap' }}>
-            Lv {level}
-          </span>
-          <div style={{ flex:1, height:'5px', background:'#1a1835', borderRadius:'3px', overflow:'hidden' }}>
-            <div style={{
-              height:'100%', width:`${levelPct}%`, borderRadius:'3px', transition:'width .6s ease',
-              background: godMode ? '#FFD700' : themeColor,
-              boxShadow: `0 0 8px ${godMode ? '#FFD700' : themeColor}80`,
-            }}/>
-          </div>
-          <span style={{ fontSize:'10px', color:'#5e5c88', fontWeight:700, whiteSpace:'nowrap' }}>
-            {lifetimeScore >= 1000 ? `${(lifetimeScore/1000).toFixed(1)}K` : lifetimeScore} XP
-          </span>
-          {studyStreak >= 2 && (
-            <span style={{
-              fontSize:'10px', fontWeight:900, whiteSpace:'nowrap', padding:'2px 7px', borderRadius:'20px',
-              background: studyStreak >= 20 ? 'rgba(255,215,0,0.15)' : studyStreak >= 10 ? 'rgba(255,60,0,0.15)' : 'rgba(255,120,0,0.12)',
-              color: studyStreak >= 20 ? '#FFD700' : studyStreak >= 10 ? '#FF3C00' : '#FF7800',
-              border: `1px solid ${studyStreak >= 20 ? '#FFD70050' : '#FF780040'}`,
-              animation: 'fadeUp .2s ease',
-            }}>
-              🔥×{studyStreak >= 20 ? 5 : studyStreak >= 10 ? 3 : 2}
-            </span>
-          )}
-        </div>
-        <p style={{ color: '#5e5c88', fontSize: '10px', fontWeight: 700, marginTop: '3px' }}>
-          {username ? `Hey ${username}! ` : ''}{TOTAL_PHRASES + TOTAL_SLANG} cards · flip → hear 🔊 · ✅❌
-          {godMode && <span style={{ color: '#FFD700', marginLeft: '6px' }}>· LEGENDARY</span>}
-        </p>
-      </header>
-
-      {/* Mode toggle */}
-      <div style={{ flexShrink: 0, display: 'flex', gap: '8px', padding: '5px 16px 0', justifyContent: 'center' }}>
-        {[['phrases', '📚 Phrases', TOTAL_PHRASES], ['slang', '🔥 Slang', TOTAL_SLANG]].map(([m, label, cnt]) => (
-          <button key={m} className={`mode-toggle-btn${mode === m ? ' active' : ''}`}
-            style={{ '--mc': m === 'slang' ? '#FF006E' : '#4D79FF', '--mg': m === 'slang' ? '#FF006E60' : '#4D79FF60' }}
-            onClick={() => setMode(m)}>
-            {label} <span style={{ opacity: 0.55, fontSize: '11px' }}>({cnt})</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Category tabs */}
-      <nav style={{ flexShrink: 0, overflowX: 'auto', borderBottom: '1px solid #1a1835', paddingBottom: '9px', marginTop: '7px' }}>
-        <div style={{ display: 'flex', gap: '7px', padding: '7px 16px 0', width: 'max-content' }}>
-          {catKeys.map(k => {
-            const t = CATEGORY_THEMES[k];
-            if (!t) return null;
-            return (
-              <button key={k} className={`tab-pill${activeCatKey === k ? ' active' : ''}`} style={{ '--tc': t.color, '--tg': t.glow }} onClick={() => setActiveCat(k)}>
-                <span>{t.icon}</span><span>{t.label}</span>
-                <span className="cnt-badge">{(source[k] || []).length}</span>
-              </button>
-            );
-          })}
-        </div>
-      </nav>
-
-      {/* Section label + progress bar */}
-      <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 18px 5px' }}>
-        <div style={{ width: '5px', height: '30px', borderRadius: '3px', background: themeColor, boxShadow: `0 0 14px ${themeColor}`, flexShrink: 0 }} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 900, color: themeColor, lineHeight: 1.2, textShadow: `0 0 10px ${themeColor}50` }}>
-            {theme.icon} {theme.label}
-          </h2>
-          {/* Progress bar */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-            <div style={{ flex: 1, height: '4px', background: '#1a1835', borderRadius: '2px', overflow: 'hidden' }}>
-              <div style={{
-                height: '100%', width: `${knownPct}%`, background: '#00FF88', borderRadius: '2px',
-                transition: 'width .5s ease', boxShadow: catKnownCount > 0 ? '0 0 6px #00FF88' : 'none',
-              }} />
-            </div>
-            <span style={{ fontSize: '10px', color: '#5e5c88', fontWeight: 800, whiteSpace: 'nowrap', flexShrink: 0 }}>
-              {catKnownCount}/{items.length} ✅
-            </span>
-          </div>
-        </div>
-        {flipped.size > 0 && (
-          <button
-            onClick={() => { setFlipped(new Set()); window.speechSynthesis.cancel(); setPlayingId(null); }}
-            style={{ fontSize: '11px', color: '#5e5c88', background: 'rgba(255,255,255,0.04)', border: '1px solid #27254a', borderRadius: '20px', padding: '4px 10px', cursor: 'pointer', fontWeight: 700, flexShrink: 0 }}
-          >🔄 Reset</button>
-        )}
-      </div>
-
-      {/* Card grid */}
-      <main style={{ flex: 1, overflowY: 'auto', padding: '0 12px 14px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(148px,1fr))', gap: '10px', maxWidth: '880px', margin: '0 auto' }}>
-          {items.map((item, i) => (
-            <LangCard
-              key={item.id}
-              item={item}
-              theme={theme}
-              isFlipped={flipped.has(item.id)}
-              onFlip={() => toggleFlip(item)}
-              index={i}
-              godMode={godMode}
-              isPlaying={playingId === item.id}
-              onSpeak={() => speak(item)}
-              rateStatus={getRateStatus(item.id)}
-              onRate={yes => onRate(item.id, yes)}
-            />
-          ))}
-        </div>
-      </main>
-    </div>
-  );
-}
-
 /* ── Bottom Nav ── */
 function BottomNav({ view, setView, themeColor }) {
   const tabs = [
@@ -527,6 +210,8 @@ export default function LucidApp() {
   const saveCustomKey    = useCallback((v) => { _setCustKey(v);   LS.set('lucid_custom_key',   v); }, []);
   const saveCustomModel  = useCallback((v) => { _setCustMod(v);   LS.set('lucid_custom_model', v); }, []);
   const saveUsername     = useCallback((n) => { _setUser(n);      LS.set('lucid_username',     n); }, []);
+  const [studyMode, _setStudyMode] = useState(() => LS.get('lucid_study_mode', 'flip_es_en'));
+  const saveStudyMode    = useCallback((m) => { _setStudyMode(m); LS.set('lucid_study_mode',   m); }, []);
 
   // Properly handle both direct values and functional updaters, and persist to localStorage
   const setLifetimeScore = useCallback((v) => {
@@ -608,6 +293,8 @@ export default function LucidApp() {
               lifetimeScore={lifetimeScore}
               studyStreak={studyStreak}
               username={username}
+              studyMode={studyMode}
+              onStudyModeChange={saveStudyMode}
             />
           )}
           {view === 'blast' && (
@@ -658,6 +345,8 @@ export default function LucidApp() {
               levelPct={levelPct}
               username={username}
               onSaveUsername={saveUsername}
+              studyMode={studyMode}
+              onSaveStudyMode={saveStudyMode}
             />
           )}
         </div>
