@@ -173,7 +173,7 @@ function ClassifiedCard({ unlocked, icon, codename, featureName, powers, progres
   );
 }
 
-export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, onToggleHideAnswer, knownCount = 0, totalCards = 896, apiKey = '', onSaveApiKey, level = 1, levelPct = 0 }) {
+export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, onToggleHideAnswer, knownCount = 0, totalCards = 896, apiKey = '', onSaveApiKey, level = 1, levelPct = 0, username = '', onSaveUsername }) {
   const [showKey, setShowKey] = useState(false);
   const godPct   = Math.min((lifetimeScore / GOD_GOAL)   * 100, 100);
   const beastPct = Math.min((bestEverStreak / BEAST_GOAL) * 100, 100);
@@ -203,6 +203,36 @@ export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, on
         <h1 style={{ fontSize: '24px', fontWeight: 900, color: '#c8c6e8' }}>⚙️ Settings</h1>
       </div>
 
+      {/* ── PROFILE ── */}
+      <div style={{ marginBottom: '24px' }}>
+        <SectionLabel icon="👤" label="PROFILE" color="#B388FF" />
+        <div style={{ background:'rgba(255,255,255,0.03)', border:'1px solid #1e1c3a', borderRadius:'16px', padding:'14px 16px' }}>
+          <p style={{ fontSize:'13px', fontWeight:800, color:'#c8c6e8', marginBottom:'8px' }}>Your Name</p>
+          <input
+            type="text"
+            value={username}
+            onChange={e => onSaveUsername?.(e.target.value)}
+            placeholder="Enter your name…"
+            maxLength={24}
+            style={{
+              width:'100%', background:'rgba(255,255,255,0.05)', border:'1px solid #27254a',
+              borderRadius:'12px', padding:'11px 14px', color:'#e8e6ff', fontSize:'15px', fontWeight:700,
+              fontFamily:'inherit', outline:'none', boxSizing:'border-box',
+              transition:'border-color .2s',
+            }}
+            onFocus={e => e.target.style.borderColor = '#B388FF'}
+            onBlur={e => e.target.style.borderColor = '#27254a'}
+          />
+          {username ? (
+            <p style={{ fontSize:'11px', color:'#B388FF', marginTop:'6px', fontWeight:700 }}>
+              ✅ Hey {username}! Your name shows on the main screen.
+            </p>
+          ) : (
+            <p style={{ fontSize:'10px', color:'#3d3b60', marginTop:'6px' }}>Personalize your app — shows as a greeting on the Learn screen</p>
+          )}
+        </div>
+      </div>
+
       {/* ── LEVEL ── */}
       <div style={{ marginBottom: '24px' }}>
         <SectionLabel icon="⭐" label="YOUR LEVEL" color="#FFD700" />
@@ -215,7 +245,7 @@ export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, on
             <div style={{ height:'100%', width:`${levelPct}%`, background:'#FFD700', borderRadius:'4px', transition:'width .6s', boxShadow: levelPct > 0 ? '0 0 10px #FFD70080' : 'none' }}/>
           </div>
           <p style={{ fontSize:'10px', color:'#3d3b60', marginTop:'5px' }}>
-            Earn XP in WordBlast to level up · Level {level + 1} requires more correct answers
+            Flip cards ✅ to earn XP (streak = more XP) · WordBlast gives bonus XP
           </p>
         </div>
       </div>

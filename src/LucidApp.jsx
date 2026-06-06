@@ -291,7 +291,7 @@ function LangCard({ item, theme, isFlipped, onFlip, index, godMode, isPlaying, o
 }
 
 /* ── Learn View ── */
-function LearnView({ godMode, voices, known, onRate, onThemeChange, level, levelPct, lifetimeScore }) {
+function LearnView({ godMode, voices, known, onRate, onThemeChange, level, levelPct, lifetimeScore, studyStreak = 0, username = '' }) {
   const [mode, setMode]           = useState('phrases');
   const [activeCat, setActiveCat] = useState(null);
   const [flipped, setFlipped]     = useState(new Set());
@@ -381,9 +381,20 @@ function LearnView({ godMode, voices, known, onRate, onThemeChange, level, level
           <span style={{ fontSize:'10px', color:'#5e5c88', fontWeight:700, whiteSpace:'nowrap' }}>
             {lifetimeScore >= 1000 ? `${(lifetimeScore/1000).toFixed(1)}K` : lifetimeScore} XP
           </span>
+          {studyStreak >= 2 && (
+            <span style={{
+              fontSize:'10px', fontWeight:900, whiteSpace:'nowrap', padding:'2px 7px', borderRadius:'20px',
+              background: studyStreak >= 20 ? 'rgba(255,215,0,0.15)' : studyStreak >= 10 ? 'rgba(255,60,0,0.15)' : 'rgba(255,120,0,0.12)',
+              color: studyStreak >= 20 ? '#FFD700' : studyStreak >= 10 ? '#FF3C00' : '#FF7800',
+              border: `1px solid ${studyStreak >= 20 ? '#FFD70050' : '#FF780040'}`,
+              animation: 'fadeUp .2s ease',
+            }}>
+              🔥×{studyStreak >= 20 ? 5 : studyStreak >= 10 ? 3 : 2}
+            </span>
+          )}
         </div>
         <p style={{ color: '#5e5c88', fontSize: '10px', fontWeight: 700, marginTop: '3px' }}>
-          {TOTAL_PHRASES + TOTAL_SLANG} cards · flip → hear 🔊 · ¿Lo sabías? ✅❌
+          {username ? `Hey ${username}! ` : ''}{TOTAL_PHRASES + TOTAL_SLANG} cards · flip → hear 🔊 · ✅❌
           {godMode && <span style={{ color: '#FFD700', marginLeft: '6px' }}>· LEGENDARY</span>}
         </p>
       </header>
@@ -499,11 +510,21 @@ export default function LucidApp() {
   const [hideAnswer,     _setHide]   = useState(() => LS.get('lucid_hide', false));
   // known: 'id' = rated YES ✅;  'no_id' = rated NO ❌
   const [known, setKnown] = useState(() => new Set(LS.get('lucid_known', [])));
-  const [apiKey, setApiKey] = useState(() => LS.get('lucid_api_key', ''));
-  const saveApiKey = useCallback((k) => { setApiKey(k); LS.set('lucid_api_key', k); }, []);
+  const [apiKey,    setApiKey]    = useState(() => LS.get('lucid_api_key', ''));
+  const [username,  _setUser]     = useState(() => LS.get('lucid_username', ''));
+  const [studyStreak, setStudyStreak] = useState(0);
+  const studyStreakRef = useRef(0);
 
-  const setLifetimeScore  = v => { _setXP(v);     LS.set('lucid_xp', v); };
-  const setBestEverStreak = v => { _setStreak(v); LS.set('lucid_streak', v); };
+  const saveApiKey  = useCallback((k) => { setApiKey(k);  LS.set('lucid_api_key',  k); }, []);
+  const saveUsername = useCallback((n) => { _setUser(n);  LS.set('lucid_username', n); }, []);
+
+  // Properly handle both direct values and functional updaters, and persist to localStorage
+  const setLifetimeScore = useCallback((v) => {
+    _setXP(prev => { const n = typeof v === 'function' ? v(prev) : v; LS.set('lucid_xp', n); return n; });
+  }, [_setXP]);
+  const setBestEverStreak = useCallback((v) => {
+    _setStreak(prev => { const n = typeof v === 'function' ? v(prev) : v; LS.set('lucid_streak', n); return n; });
+  }, [_setStreak]);
   const toggleHideAnswer  = () => _setHide(prev => { const n = !prev; LS.set('lucid_hide', n); return n; });
 
   const markCard = useCallback((id, yes) => {
@@ -514,7 +535,17 @@ export default function LucidApp() {
       LS.set('lucid_known', [...next]);
       return next;
     });
-  }, []);
+    if (yes) {
+      const ns = studyStreakRef.current + 1;
+      studyStreakRef.current = ns;
+      setStudyStreak(ns);
+      const mult = ns >= 20 ? 5 : ns >= 10 ? 3 : ns >= 5 ? 2 : 1;
+      setLifetimeScore(prev => prev + mult);
+    } else {
+      studyStreakRef.current = 0;
+      setStudyStreak(0);
+    }
+  }, [setLifetimeScore]);
 
   const godMode   = lifetimeScore  >= 9_999_999_999;
   const beastMode = bestEverStreak >= 50;
@@ -525,7 +556,7 @@ export default function LucidApp() {
   const handleGameEnd = useCallback(({ score, streak }) => {
     setLifetimeScore(prev => prev + score);
     setBestEverStreak(prev => Math.max(prev, streak));
-  }, []);
+  }, [setLifetimeScore, setBestEverStreak]);
 
   // Load voices globally — shared with all children
   useEffect(() => {
@@ -565,6 +596,8 @@ export default function LucidApp() {
               level={level}
               levelPct={levelPct}
               lifetimeScore={lifetimeScore}
+              studyStreak={studyStreak}
+              username={username}
             />
           )}
           {view === 'blast' && (
@@ -598,6 +631,8 @@ export default function LucidApp() {
               onSaveApiKey={saveApiKey}
               level={level}
               levelPct={levelPct}
+              username={username}
+              onSaveUsername={saveUsername}
             />
           )}
         </div>
