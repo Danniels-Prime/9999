@@ -143,7 +143,7 @@ export default function ConvoAI({ apiKey, openaiKey, openrouterKey, deepseekKey,
   };
 
   // Tap a word → open popup + fetch definition
-  const handleWordTap = useCallback(async (word) => {
+  const handleWordTap = useCallback(async (word, sentence) => {
     const key = word.toLowerCase();
     if (wordCacheRef.current[key]) {
       setPopup({ word, data: wordCacheRef.current[key], loading: false, error: null });
@@ -151,7 +151,7 @@ export default function ConvoAI({ apiKey, openaiKey, openrouterKey, deepseekKey,
     }
     setPopup({ word, data: null, loading: true, error: null });
     try {
-      const data = await lookupWordAI(word, aiCfg);
+      const data = await lookupWordAI(word, aiCfg, sentence);
       wordCacheRef.current[key] = data;
       setPopup({ word, data, loading: false, error: null });
     } catch (e) {

@@ -38,7 +38,7 @@ export default function WordPopup({ word, data, loading, error, onClose, themeCo
         {/* Header */}
         <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:'12px' }}>
           <div>
-            <p style={{ fontSize:'20px', fontWeight:900, color:'#fff', letterSpacing:'-0.3px' }}>"{word}"</p>
+            <p style={{ fontSize:'20px', fontWeight:900, color:'#fff', letterSpacing:'-0.3px' }}>"{data?.phrase || word}"</p>
             <p style={{ fontSize:'9px', color:cc, fontWeight:800, letterSpacing:'0.08em', marginTop:'2px' }}>TAP ANY WORD · EXPLORE IT</p>
           </div>
           <button data-word-popup onClick={onClose} style={{

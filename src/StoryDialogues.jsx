@@ -76,7 +76,7 @@ export default function StoryDialogues({ voices, themeColor, onBack, apiKey, ope
     setTranslations({});
   };
 
-  const handleWordTap = useCallback(async (word) => {
+  const handleWordTap = useCallback(async (word, sentence) => {
     const key = word.toLowerCase();
     if (wordCacheRef.current[key]) {
       setPopup({ word, data: wordCacheRef.current[key], loading: false, error: null });
@@ -84,7 +84,7 @@ export default function StoryDialogues({ voices, themeColor, onBack, apiKey, ope
     }
     setPopup({ word, data: null, loading: true, error: null });
     try {
-      const data = await lookupWordAI(word, aiCfg);
+      const data = await lookupWordAI(word, aiCfg, sentence);
       wordCacheRef.current[key] = data;
       setPopup({ word, data, loading: false, error: null });
     } catch (e) {

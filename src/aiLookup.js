@@ -5,8 +5,8 @@ const OPENROUTER_FREE_MODELS = [
   'meta-llama/llama-3.2-3b-instruct:free',
 ];
 
-const LOOKUP_SYSTEM = `You are a concise English-Spanish dictionary. Reply with ONLY valid JSON, no extra text:
-{"es":"Spanish translation","def":"Brief English definition (max 8 words)","ex":"One short natural example sentence"}`;
+const LOOKUP_SYSTEM = `You are a concise English-Spanish dictionary specializing in American slang, idioms, and phrasal verbs. When given a word in sentence context, if that word is part of a common American English expression or phrasal verb (e.g. "link up", "no cap", "hit me up", "hang in there", "for sure", "what's good", "bet", "say less"), explain the FULL EXPRESSION — not just the single word. Reply with ONLY valid JSON, no extra text:
+{"phrase":"the full expression or word you are explaining","es":"Spanish translation","def":"Brief English definition (max 10 words)","ex":"One short natural example sentence using the expression"}`;
 
 const TRANSLATE_SYSTEM = `Translate the following English text to natural conversational Spanish. Reply with ONLY the Spanish translation, no labels or extra text.`;
 
@@ -74,8 +74,11 @@ function callAI(systemPrompt, userMsg, cfg, maxTokens) {
   throw new Error('no_key');
 }
 
-export async function lookupWordAI(word, cfg) {
-  const raw = await callAI(LOOKUP_SYSTEM, `Word or phrase: "${word}"`, cfg, 120);
+export async function lookupWordAI(word, cfg, sentence = '') {
+  const userMsg = sentence
+    ? `Word: "${word}" — in context: "${sentence}"`
+    : `Word or phrase: "${word}"`;
+  const raw = await callAI(LOOKUP_SYSTEM, userMsg, cfg, 130);
   const match = raw?.match(/\{[\s\S]*?\}/);
   if (!match) throw new Error('Could not parse response');
   return JSON.parse(match[0]);
