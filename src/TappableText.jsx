@@ -13,7 +13,7 @@ export default function TappableText({ text, onWordTap, accentColor, baseStyle }
         return (
           <span
             key={i}
-            onClick={(e) => { e.stopPropagation(); onWordTap(word, e); }}
+            onClick={(e) => { e.stopPropagation(); onWordTap(word, text, e); }}
             style={{
               ...baseStyle,
               cursor: 'pointer',
