@@ -15,7 +15,7 @@ const STUDY_MODES = [
   { id:'match',       icon:'🃏',  label:'Match' },
 ];
 
-export default function LearnView({ godMode, voices, known, onRate, onThemeChange, level, levelPct, lifetimeScore, studyStreak = 0, username = '', studyMode = 'flip_es_en', onStudyModeChange }) {
+export default function LearnView({ godMode, voices, known, srs = {}, onRate, onThemeChange, level, levelPct, lifetimeScore, studyStreak = 0, username = '', studyMode = 'flip_es_en', onStudyModeChange }) {
   const [mode, setMode]           = useState('phrases');
   const [activeCat, setActiveCat] = useState(null);
   const [flipped, setFlipped]     = useState(new Set());
@@ -30,9 +30,15 @@ export default function LearnView({ godMode, voices, known, onRate, onThemeChang
   const items        = source[activeCatKey] || [];
   const themeColor   = godMode ? '#FFD700' : (theme.color || '#00F5D4');
 
-  const displayItems = studyMode === 'weak'
+  const displayItems = (studyMode === 'weak'
     ? items.filter(it => known.has('no_' + it.id))
-    : items;
+    : items
+  ).sort((a, b) => {
+    // Due cards (not yet reviewed or past interval) come first
+    const aDue = !srs[a.id] || Date.now() >= srs[a.id].nextReview;
+    const bDue = !srs[b.id] || Date.now() >= srs[b.id].nextReview;
+    return aDue === bDue ? 0 : aDue ? -1 : 1;
+  });
 
   const catKnownCount = items.filter(it => known.has(it.id)).length;
   const knownPct      = items.length ? (catKnownCount / items.length) * 100 : 0;
