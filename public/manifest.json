@@ -1,0 +1,32 @@
+{
+  "name": "LucidLand",
+  "short_name": "LucidLand",
+  "description": "Learn American English from Spanish — flashcards, AI chat, and story dialogues",
+  "start_url": "/9999/",
+  "scope": "/9999/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#080716",
+  "theme_color": "#7C3AED",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/9999/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/9999/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/9999/maskable-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

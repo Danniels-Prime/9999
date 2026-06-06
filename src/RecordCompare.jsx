@@ -67,9 +67,7 @@ export default function RecordCompare({ themeColor, onBack }) {
         const hue = 260 + (i / data.length) * 80;
         ctx.fillStyle = color;
         ctx.globalAlpha = 0.7 + (v / 255) * 0.3;
-        ctx.beginPath();
-        ctx.roundRect(i * bw, canvas.height - h, bw - 1, h, 2);
-        ctx.fill();
+        ctx.fillRect(i * bw, canvas.height - h, Math.max(1, bw - 1), h);
       });
       ctx.globalAlpha = 1;
     };

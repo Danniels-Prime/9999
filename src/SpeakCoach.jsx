@@ -10,13 +10,12 @@ const ALL_CARDS = [
   ),
 ];
 
-export default function SpeakCoach({ themeColor, onBack }) {
+export default function SpeakCoach({ themeColor, voices = [], onBack }) {
   const [idx, setIdx]               = useState(0);
   const [recording, setRecording]   = useState(false);
   const [recordedUrl, setRecordedUrl] = useState(null);
   const [ttsPlaying, setTtsPlaying] = useState(false);
   const [grade, setGrade]           = useState(null);
-  const [voices, setVoices]         = useState([]);
   const [showEs, setShowEs]         = useState(true);
   const recorderRef  = useRef(null);
   const waveCanvasRef = useRef(null);
@@ -27,13 +26,7 @@ export default function SpeakCoach({ themeColor, onBack }) {
   const theme = CATEGORY_THEMES[card.catKey] || { color: themeColor, glow: `${themeColor}60`, dim: `${themeColor}15` };
 
   useEffect(() => {
-    const load = () => setVoices(window.speechSynthesis.getVoices());
-    load();
-    window.speechSynthesis.addEventListener('voiceschanged', load);
-    return () => {
-      window.speechSynthesis.removeEventListener('voiceschanged', load);
-      stopCleanup();
-    };
+    return () => stopCleanup();
   }, []);
 
   const stopCleanup = () => {
@@ -73,9 +66,7 @@ export default function SpeakCoach({ themeColor, onBack }) {
         const h = (v / 255) * canvas.height * 0.85;
         ctx.fillStyle = color;
         ctx.globalAlpha = 0.7 + (v / 255) * 0.3;
-        ctx.beginPath();
-        ctx.roundRect(i * bw, canvas.height - h, bw - 1, h, 2);
-        ctx.fill();
+        ctx.fillRect(i * bw, canvas.height - h, bw - 1, h);
       });
       ctx.globalAlpha = 1;
     };
