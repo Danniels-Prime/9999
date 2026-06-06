@@ -181,7 +181,7 @@ export default function ConvoAI({ apiKey, openaiKey, openrouterKey, deepseekKey,
       } else if (provider === 'openai') {
         reply = await callOpenAICompat('https://api.openai.com/v1/chat/completions', activeKey, 'gpt-4o-mini', history);
       } else if (provider === 'openrouter') {
-        reply = await callOpenAICompat('https://openrouter.ai/api/v1/chat/completions', activeKey, 'google/gemma-2-9b-it:free', history);
+        reply = await callOpenAICompat('https://openrouter.ai/api/v1/chat/completions', activeKey, 'mistralai/mistral-7b-instruct:free', history);
       } else if (provider === 'deepseek') {
         reply = await callOpenAICompat('https://api.deepseek.com/chat/completions', activeKey, 'deepseek-chat', history);
       } else if (provider === 'custom') {

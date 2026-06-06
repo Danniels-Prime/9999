@@ -46,7 +46,7 @@ function callAI(systemPrompt, userMsg, cfg, maxTokens) {
   if (provider === 'openai' && openaiKey)
     return callOpenAICompatAI('https://api.openai.com/v1/chat/completions', openaiKey, 'gpt-4o-mini', systemPrompt, userMsg, maxTokens);
   if (provider === 'openrouter' && openrouterKey)
-    return callOpenAICompatAI('https://openrouter.ai/api/v1/chat/completions', openrouterKey, 'google/gemma-2-9b-it:free', systemPrompt, userMsg, maxTokens);
+    return callOpenAICompatAI('https://openrouter.ai/api/v1/chat/completions', openrouterKey, 'mistralai/mistral-7b-instruct:free', systemPrompt, userMsg, maxTokens);
   if (provider === 'deepseek' && deepseekKey)
     return callOpenAICompatAI('https://api.deepseek.com/chat/completions', deepseekKey, 'deepseek-chat', systemPrompt, userMsg, maxTokens);
   if (provider === 'custom' && customKey && customEndpoint && customModel)
