@@ -10,6 +10,9 @@ permissions:
 
 jobs:
   build-and-deploy:
+    environment:
+      name: github-pages
+      url: https://danniels-prime.github.io/9999/
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
