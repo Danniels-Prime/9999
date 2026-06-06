@@ -12,7 +12,6 @@ const LS = {
 
 /* ── Global CSS ── */
 const GLOBAL_CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%;font-family:'Nunito',system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
   #root{height:100%;position:relative}
@@ -492,10 +491,12 @@ export default function LucidApp() {
 
   // Load voices globally — shared with all children
   useEffect(() => {
-    const load = () => setVoices(window.speechSynthesis.getVoices());
+    const synth = window.speechSynthesis;
+    if (!synth) return;
+    const load = () => setVoices(synth.getVoices());
     load();
-    window.speechSynthesis.addEventListener('voiceschanged', load);
-    return () => window.speechSynthesis.removeEventListener('voiceschanged', load);
+    synth.addEventListener('voiceschanged', load);
+    return () => synth.removeEventListener('voiceschanged', load);
   }, []);
 
   useEffect(() => {
