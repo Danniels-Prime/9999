@@ -185,11 +185,12 @@ function ClassifiedCard({ unlocked, icon, codename, featureName, powers, progres
   );
 }
 
-export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, onToggleHideAnswer, knownCount = 0, totalCards = 896, apiKey = '', onSaveApiKey, openaiKey = '', onSaveOpenaiKey, deepseekKey = '', onSaveDeepseekKey, customEndpoint = '', onSaveCustomEndpoint, customKey = '', onSaveCustomKey, customModel = '', onSaveCustomModel, level = 1, levelPct = 0, username = '', onSaveUsername, studyMode = 'flip_es_en', onSaveStudyMode }) {
-  const [showKey,  setShowKey]  = useState(false);
-  const [showKey2, setShowKey2] = useState(false);
-  const [showKey3, setShowKey3] = useState(false);
-  const [showKey4, setShowKey4] = useState(false);
+export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, onToggleHideAnswer, knownCount = 0, totalCards = 896, apiKey = '', onSaveApiKey, openaiKey = '', onSaveOpenaiKey, openrouterKey = '', onSaveOpenrouterKey, deepseekKey = '', onSaveDeepseekKey, customEndpoint = '', onSaveCustomEndpoint, customKey = '', onSaveCustomKey, customModel = '', onSaveCustomModel, level = 1, levelPct = 0, username = '', onSaveUsername, studyMode = 'flip_es_en', onSaveStudyMode }) {
+  const [showKey,   setShowKey]   = useState(false);
+  const [showKey2,  setShowKey2]  = useState(false);
+  const [showKeyOR, setShowKeyOR] = useState(false);
+  const [showKey3,  setShowKey3]  = useState(false);
+  const [showKey4,  setShowKey4]  = useState(false);
   const godPct   = Math.min((lifetimeScore / GOD_GOAL)   * 100, 100);
   const beastPct = Math.min((bestEverStreak / BEAST_GOAL) * 100, 100);
   const godUnlocked   = lifetimeScore   >= GOD_GOAL;
@@ -302,6 +303,22 @@ export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, on
             <button onClick={() => setShowKey2(s => !s)} style={{ background:'rgba(255,255,255,0.06)', border:'1px solid #27254a', borderRadius:'10px', padding:'9px 12px', color:'#9b99c0', cursor:'pointer', fontSize:'14px' }}>{showKey2 ? '🙈' : '👁'}</button>
           </div>
           <p style={{ fontSize:'10px', color:'#3d3b60', marginTop:'5px' }}>platform.openai.com/api-keys · uses gpt-4o-mini</p>
+        </div>
+
+        {/* OpenRouter */}
+        <div style={{ background:'rgba(255,255,255,0.03)', border:`1px solid ${openrouterKey ? '#6366F140' : '#1e1c3a'}`, borderRadius:'16px', padding:'14px 16px', marginBottom:'10px' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:'8px', marginBottom:'8px' }}>
+            <span style={{ fontSize:'14px' }}>🔷</span>
+            <p style={{ fontSize:'13px', fontWeight:800, color:'#c8c6e8' }}>OpenRouter</p>
+            {openrouterKey && <span style={{ fontSize:'10px', color:'#6366F1', fontWeight:900, marginLeft:'auto' }}>✅ ACTIVE</span>}
+          </div>
+          <div style={{ display:'flex', gap:'8px', alignItems:'center' }}>
+            <input type={showKeyOR ? 'text' : 'password'} value={openrouterKey} onChange={e => onSaveOpenrouterKey?.(e.target.value)} placeholder="sk-or-v3-..."
+              style={{ flex:1, background:'rgba(255,255,255,0.06)', border:`1px solid ${openrouterKey ? '#6366F1' : '#27254a'}`, borderRadius:'10px', padding:'9px 12px', color:'#e8e6ff', fontSize:'13px', fontFamily:'monospace', outline:'none' }}
+            />
+            <button onClick={() => setShowKeyOR(s => !s)} style={{ background:'rgba(255,255,255,0.06)', border:'1px solid #27254a', borderRadius:'10px', padding:'9px 12px', color:'#9b99c0', cursor:'pointer', fontSize:'14px' }}>{showKeyOR ? '🙈' : '👁'}</button>
+          </div>
+          <p style={{ fontSize:'10px', color:'#3d3b60', marginTop:'5px' }}>openrouter.ai · free models (Llama, Gemma) · works from browser ✅</p>
         </div>
 
         {/* DeepSeek */}

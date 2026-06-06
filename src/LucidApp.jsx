@@ -195,6 +195,7 @@ export default function LucidApp() {
   const [known, setKnown] = useState(() => new Set(LS.get('lucid_known', [])));
   const [apiKey,         setApiKey]     = useState(() => LS.get('lucid_api_key', ''));
   const [openaiKey,      _setOpenai]    = useState(() => LS.get('lucid_openai_key', ''));
+  const [openrouterKey,  _setOpenRouter]= useState(() => LS.get('lucid_openrouter_key', ''));
   const [deepseekKey,    _setDeepseek]  = useState(() => LS.get('lucid_deepseek_key', ''));
   const [customEndpoint, _setCustEp]    = useState(() => LS.get('lucid_custom_ep', ''));
   const [customKey,      _setCustKey]   = useState(() => LS.get('lucid_custom_key', ''));
@@ -204,8 +205,9 @@ export default function LucidApp() {
   const studyStreakRef = useRef(0);
 
   const saveApiKey       = useCallback((k) => { setApiKey(k);     LS.set('lucid_api_key',      k); }, []);
-  const saveOpenaiKey    = useCallback((k) => { _setOpenai(k);    LS.set('lucid_openai_key',   k); }, []);
-  const saveDeepseekKey  = useCallback((k) => { _setDeepseek(k); LS.set('lucid_deepseek_key', k); }, []);
+  const saveOpenaiKey      = useCallback((k) => { _setOpenai(k);      LS.set('lucid_openai_key',      k); }, []);
+  const saveOpenrouterKey  = useCallback((k) => { _setOpenRouter(k);  LS.set('lucid_openrouter_key',  k); }, []);
+  const saveDeepseekKey    = useCallback((k) => { _setDeepseek(k);    LS.set('lucid_deepseek_key',    k); }, []);
   const saveCustomEndpoint = useCallback((v) => { _setCustEp(v);  LS.set('lucid_custom_ep',    v); }, []);
   const saveCustomKey    = useCallback((v) => { _setCustKey(v);   LS.set('lucid_custom_key',   v); }, []);
   const saveCustomModel  = useCallback((v) => { _setCustMod(v);   LS.set('lucid_custom_model', v); }, []);
@@ -314,6 +316,7 @@ export default function LucidApp() {
               voices={voices}
               apiKey={apiKey}
               openaiKey={openaiKey}
+              openrouterKey={openrouterKey}
               deepseekKey={deepseekKey}
               customEndpoint={customEndpoint}
               customKey={customKey}
@@ -333,6 +336,8 @@ export default function LucidApp() {
               onSaveApiKey={saveApiKey}
               openaiKey={openaiKey}
               onSaveOpenaiKey={saveOpenaiKey}
+              openrouterKey={openrouterKey}
+              onSaveOpenrouterKey={saveOpenrouterKey}
               deepseekKey={deepseekKey}
               onSaveDeepseekKey={saveDeepseekKey}
               customEndpoint={customEndpoint}

@@ -40,11 +40,13 @@ async function callOpenAICompatAI(endpoint, key, model, systemPrompt, userMsg, m
 }
 
 function callAI(systemPrompt, userMsg, cfg, maxTokens) {
-  const { provider, claudeKey, openaiKey, deepseekKey, customEndpoint, customKey, customModel } = cfg;
+  const { provider, claudeKey, openaiKey, openrouterKey, deepseekKey, customEndpoint, customKey, customModel } = cfg;
   if (provider === 'claude' && claudeKey)
     return callClaudeAI(claudeKey, systemPrompt, userMsg, maxTokens);
   if (provider === 'openai' && openaiKey)
     return callOpenAICompatAI('https://api.openai.com/v1/chat/completions', openaiKey, 'gpt-4o-mini', systemPrompt, userMsg, maxTokens);
+  if (provider === 'openrouter' && openrouterKey)
+    return callOpenAICompatAI('https://openrouter.ai/api/v1/chat/completions', openrouterKey, 'meta-llama/llama-3.1-8b-instruct:free', systemPrompt, userMsg, maxTokens);
   if (provider === 'deepseek' && deepseekKey)
     return callOpenAICompatAI('https://api.deepseek.com/chat/completions', deepseekKey, 'deepseek-chat', systemPrompt, userMsg, maxTokens);
   if (provider === 'custom' && customKey && customEndpoint && customModel)

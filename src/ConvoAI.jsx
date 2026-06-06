@@ -6,10 +6,11 @@ import { lookupWordAI, translateTextAI } from './aiLookup';
 const SYSTEM_PROMPT = `You are Alex, a friendly American English conversation partner helping Spanish speakers practice everyday American English. You use natural American slang, expressions, and idioms. Keep responses short (2-4 sentences max). When the user types a word or phrase (like "bet" or "no cap"), explain briefly how it's used, give one quick example sentence, then continue the conversation naturally. If they make grammar errors, model the correct phrasing naturally in your reply without explicitly calling it out. Stay casual, warm, and encouraging. Never be preachy or lecture-y.`;
 
 const PROVIDERS = {
-  claude:   { label:'Claude',   icon:'🟣', color:'#C96442', placeholder:'sk-ant-...',  hint:'console.anthropic.com' },
-  openai:   { label:'ChatGPT',  icon:'🟢', color:'#10A37F', placeholder:'sk-...',       hint:'platform.openai.com/api-keys' },
-  deepseek: { label:'DeepSeek', icon:'🔵', color:'#4D6EFF', placeholder:'sk-...',       hint:'platform.deepseek.com' },
-  custom:   { label:'Custom',   icon:'⚙️', color:'#9B59B6', placeholder:'sk-...',       hint:'Any OpenAI-compatible API' },
+  claude:      { label:'Claude',      icon:'🟣', color:'#C96442', placeholder:'sk-ant-...',  hint:'console.anthropic.com' },
+  openai:      { label:'ChatGPT',     icon:'🟢', color:'#10A37F', placeholder:'sk-...',       hint:'platform.openai.com/api-keys' },
+  openrouter:  { label:'OpenRouter',  icon:'🔷', color:'#6366F1', placeholder:'sk-or-v3-...', hint:'openrouter.ai · free models ✅' },
+  deepseek:    { label:'DeepSeek',    icon:'🔵', color:'#4D6EFF', placeholder:'sk-...',       hint:'platform.deepseek.com' },
+  custom:      { label:'Custom',      icon:'⚙️', color:'#9B59B6', placeholder:'sk-...',       hint:'Any OpenAI-compatible API' },
 };
 const PROVIDER_KEYS = Object.keys(PROVIDERS);
 const LS_PROVIDER   = 'lucid_ai_provider';
@@ -60,7 +61,7 @@ function TypingDots() {
 
 const hasSpeechRecognition = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
 
-export default function ConvoAI({ apiKey, openaiKey, deepseekKey, customEndpoint, customKey, customModel, voices, themeColor, onBack }) {
+export default function ConvoAI({ apiKey, openaiKey, openrouterKey, deepseekKey, customEndpoint, customKey, customModel, voices, themeColor, onBack }) {
   const [provider, setProvider] = useState(() => {
     const saved = localStorage.getItem(LS_PROVIDER);
     return PROVIDER_KEYS.includes(saved) ? saved : 'claude';
@@ -85,7 +86,7 @@ export default function ConvoAI({ apiKey, openaiKey, deepseekKey, customEndpoint
   const inputRef       = useRef(null);
   const recognitionRef = useRef(null);
 
-  const keys = { claude: apiKey, openai: openaiKey, deepseek: deepseekKey, custom: customKey };
+  const keys = { claude: apiKey, openai: openaiKey, openrouter: openrouterKey, deepseek: deepseekKey, custom: customKey };
   const activeKey = keys[provider] || '';
   const prov = PROVIDERS[provider];
 
@@ -93,6 +94,7 @@ export default function ConvoAI({ apiKey, openaiKey, deepseekKey, customEndpoint
     provider,
     claudeKey: apiKey,
     openaiKey,
+    openrouterKey,
     deepseekKey,
     customEndpoint,
     customKey,
@@ -178,6 +180,8 @@ export default function ConvoAI({ apiKey, openaiKey, deepseekKey, customEndpoint
         reply = await callClaude(activeKey, history);
       } else if (provider === 'openai') {
         reply = await callOpenAICompat('https://api.openai.com/v1/chat/completions', activeKey, 'gpt-4o-mini', history);
+      } else if (provider === 'openrouter') {
+        reply = await callOpenAICompat('https://openrouter.ai/api/v1/chat/completions', activeKey, 'meta-llama/llama-3.1-8b-instruct:free', history);
       } else if (provider === 'deepseek') {
         reply = await callOpenAICompat('https://api.deepseek.com/chat/completions', activeKey, 'deepseek-chat', history);
       } else if (provider === 'custom') {
