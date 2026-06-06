@@ -173,8 +173,10 @@ function ClassifiedCard({ unlocked, icon, codename, featureName, powers, progres
   );
 }
 
-export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, onToggleHideAnswer, knownCount = 0, totalCards = 896, apiKey = '', onSaveApiKey, level = 1, levelPct = 0, username = '', onSaveUsername }) {
-  const [showKey, setShowKey] = useState(false);
+export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, onToggleHideAnswer, knownCount = 0, totalCards = 896, apiKey = '', onSaveApiKey, openaiKey = '', onSaveOpenaiKey, deepseekKey = '', onSaveDeepseekKey, level = 1, levelPct = 0, username = '', onSaveUsername }) {
+  const [showKey,  setShowKey]  = useState(false);
+  const [showKey2, setShowKey2] = useState(false);
+  const [showKey3, setShowKey3] = useState(false);
   const godPct   = Math.min((lifetimeScore / GOD_GOAL)   * 100, 100);
   const beastPct = Math.min((bestEverStreak / BEAST_GOAL) * 100, 100);
   const godUnlocked   = lifetimeScore   >= GOD_GOAL;
@@ -253,29 +255,56 @@ export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, on
       {/* ── AI CHAT ── */}
       <div style={{ marginBottom: '28px' }}>
         <SectionLabel icon="🤖" label="AI CHAT" color="#00F5D4" />
-        <div style={{ background:'rgba(255,255,255,0.03)', border:'1px solid #1e1c3a', borderRadius:'16px', padding:'14px 16px' }}>
-          <p style={{ fontSize:'13px', fontWeight:800, color:'#c8c6e8', marginBottom:'8px' }}>Claude API Key</p>
-          <div style={{ display:'flex', gap:'8px', alignItems:'center' }}>
-            <input
-              type={showKey ? 'text' : 'password'}
-              value={apiKey}
-              onChange={e => onSaveApiKey?.(e.target.value)}
-              placeholder="sk-ant-..."
-              style={{
-                flex:1, background:'rgba(255,255,255,0.06)', border:`1px solid ${apiKey ? '#00F5D4' : '#27254a'}`,
-                borderRadius:'10px', padding:'9px 12px', color:'#e8e6ff', fontSize:'13px',
-                fontFamily:'monospace', outline:'none',
-              }}
-            />
-            <button onClick={() => setShowKey(s => !s)} style={{
-              background:'rgba(255,255,255,0.06)', border:'1px solid #27254a', borderRadius:'10px',
-              padding:'9px 12px', color:'#9b99c0', cursor:'pointer', fontSize:'14px',
-            }}>{showKey ? '🙈' : '👁'}</button>
+        <p style={{ fontSize:'10px', color:'#5e5c88', marginBottom:'12px', fontWeight:600 }}>
+          Add one or more API keys — switch between providers inside Chat AI
+        </p>
+
+        {/* Claude */}
+        <div style={{ background:'rgba(255,255,255,0.03)', border:`1px solid ${apiKey ? '#C9644240' : '#1e1c3a'}`, borderRadius:'16px', padding:'14px 16px', marginBottom:'10px' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:'8px', marginBottom:'8px' }}>
+            <span style={{ fontSize:'14px' }}>🟣</span>
+            <p style={{ fontSize:'13px', fontWeight:800, color:'#c8c6e8' }}>Claude (Anthropic)</p>
+            {apiKey && <span style={{ fontSize:'10px', color:'#C96442', fontWeight:900, marginLeft:'auto' }}>✅ ACTIVE</span>}
           </div>
-          <p style={{ fontSize:'10px', color:'#3d3b60', marginTop:'6px' }}>
-            Get your key at console.anthropic.com · stored on this device only
-          </p>
-          {apiKey && <p style={{ fontSize:'10px', color:'#00F5D4', marginTop:'3px', fontWeight:700 }}>✅ Key saved — Chat AI is ready in Practice tab</p>}
+          <div style={{ display:'flex', gap:'8px', alignItems:'center' }}>
+            <input type={showKey ? 'text' : 'password'} value={apiKey} onChange={e => onSaveApiKey?.(e.target.value)} placeholder="sk-ant-..."
+              style={{ flex:1, background:'rgba(255,255,255,0.06)', border:`1px solid ${apiKey ? '#C96442' : '#27254a'}`, borderRadius:'10px', padding:'9px 12px', color:'#e8e6ff', fontSize:'13px', fontFamily:'monospace', outline:'none' }}
+            />
+            <button onClick={() => setShowKey(s => !s)} style={{ background:'rgba(255,255,255,0.06)', border:'1px solid #27254a', borderRadius:'10px', padding:'9px 12px', color:'#9b99c0', cursor:'pointer', fontSize:'14px' }}>{showKey ? '🙈' : '👁'}</button>
+          </div>
+          <p style={{ fontSize:'10px', color:'#3d3b60', marginTop:'5px' }}>console.anthropic.com</p>
+        </div>
+
+        {/* OpenAI / ChatGPT */}
+        <div style={{ background:'rgba(255,255,255,0.03)', border:`1px solid ${openaiKey ? '#10A37F40' : '#1e1c3a'}`, borderRadius:'16px', padding:'14px 16px', marginBottom:'10px' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:'8px', marginBottom:'8px' }}>
+            <span style={{ fontSize:'14px' }}>🟢</span>
+            <p style={{ fontSize:'13px', fontWeight:800, color:'#c8c6e8' }}>ChatGPT (OpenAI)</p>
+            {openaiKey && <span style={{ fontSize:'10px', color:'#10A37F', fontWeight:900, marginLeft:'auto' }}>✅ ACTIVE</span>}
+          </div>
+          <div style={{ display:'flex', gap:'8px', alignItems:'center' }}>
+            <input type={showKey2 ? 'text' : 'password'} value={openaiKey} onChange={e => onSaveOpenaiKey?.(e.target.value)} placeholder="sk-..."
+              style={{ flex:1, background:'rgba(255,255,255,0.06)', border:`1px solid ${openaiKey ? '#10A37F' : '#27254a'}`, borderRadius:'10px', padding:'9px 12px', color:'#e8e6ff', fontSize:'13px', fontFamily:'monospace', outline:'none' }}
+            />
+            <button onClick={() => setShowKey2(s => !s)} style={{ background:'rgba(255,255,255,0.06)', border:'1px solid #27254a', borderRadius:'10px', padding:'9px 12px', color:'#9b99c0', cursor:'pointer', fontSize:'14px' }}>{showKey2 ? '🙈' : '👁'}</button>
+          </div>
+          <p style={{ fontSize:'10px', color:'#3d3b60', marginTop:'5px' }}>platform.openai.com/api-keys · uses gpt-4o-mini</p>
+        </div>
+
+        {/* DeepSeek */}
+        <div style={{ background:'rgba(255,255,255,0.03)', border:`1px solid ${deepseekKey ? '#4D6EFF40' : '#1e1c3a'}`, borderRadius:'16px', padding:'14px 16px' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:'8px', marginBottom:'8px' }}>
+            <span style={{ fontSize:'14px' }}>🔵</span>
+            <p style={{ fontSize:'13px', fontWeight:800, color:'#c8c6e8' }}>DeepSeek</p>
+            {deepseekKey && <span style={{ fontSize:'10px', color:'#4D6EFF', fontWeight:900, marginLeft:'auto' }}>✅ ACTIVE</span>}
+          </div>
+          <div style={{ display:'flex', gap:'8px', alignItems:'center' }}>
+            <input type={showKey3 ? 'text' : 'password'} value={deepseekKey} onChange={e => onSaveDeepseekKey?.(e.target.value)} placeholder="sk-..."
+              style={{ flex:1, background:'rgba(255,255,255,0.06)', border:`1px solid ${deepseekKey ? '#4D6EFF' : '#27254a'}`, borderRadius:'10px', padding:'9px 12px', color:'#e8e6ff', fontSize:'13px', fontFamily:'monospace', outline:'none' }}
+            />
+            <button onClick={() => setShowKey3(s => !s)} style={{ background:'rgba(255,255,255,0.06)', border:'1px solid #27254a', borderRadius:'10px', padding:'9px 12px', color:'#9b99c0', cursor:'pointer', fontSize:'14px' }}>{showKey3 ? '🙈' : '👁'}</button>
+          </div>
+          <p style={{ fontSize:'10px', color:'#3d3b60', marginTop:'5px' }}>platform.deepseek.com · very affordable</p>
         </div>
       </div>
 

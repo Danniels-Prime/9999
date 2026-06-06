@@ -10,7 +10,7 @@ const MODES = [
   { id:'stories', icon:'📖', label:'Stories' },
 ];
 
-export default function PracticeHub({ themeColor, voices, apiKey, onBack }) {
+export default function PracticeHub({ themeColor, voices, apiKey, openaiKey, deepseekKey, onBack }) {
   const [mode, setMode] = useState(() => {
     const saved = localStorage.getItem(LS_KEY);
     return MODES.find(m => m.id === saved) ? saved : 'speak';
@@ -51,7 +51,7 @@ export default function PracticeHub({ themeColor, voices, apiKey, onBack }) {
           <SpeakCoach themeColor={themeColor} voices={voices} onBack={onBack} />
         )}
         {mode === 'chat' && (
-          <ConvoAI themeColor={themeColor} voices={voices} apiKey={apiKey} onBack={() => switchMode('speak')} />
+          <ConvoAI themeColor={themeColor} voices={voices} apiKey={apiKey} openaiKey={openaiKey} deepseekKey={deepseekKey} onBack={() => switchMode('speak')} />
         )}
         {mode === 'stories' && (
           <StoryDialogues themeColor={themeColor} voices={voices} onBack={() => switchMode('speak')} />
