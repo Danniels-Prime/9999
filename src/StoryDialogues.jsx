@@ -7,9 +7,9 @@ import { lookupWordAI, translateTextAI } from './aiLookup';
 
 const CATS = Object.keys(DIALOGUES);
 const LS_PROVIDER = 'lucid_ai_provider';
-const PROVIDER_KEYS = ['claude','openai','deepseek','custom'];
+const PROVIDER_KEYS = ['claude','openai','openrouter','deepseek','custom'];
 
-export default function StoryDialogues({ voices, themeColor, onBack, apiKey, openaiKey, deepseekKey, customEndpoint, customKey, customModel }) {
+export default function StoryDialogues({ voices, themeColor, onBack, apiKey, openaiKey, openrouterKey, deepseekKey, customEndpoint, customKey, customModel }) {
   const [activeCat, setActiveCat]     = useState(CATS[0]);
   const [playing, setPlaying]         = useState(false);
   const [currentLine, setCurrentLine] = useState(null);
@@ -24,7 +24,7 @@ export default function StoryDialogues({ voices, themeColor, onBack, apiKey, ope
     return PROVIDER_KEYS.includes(saved) ? saved : 'claude';
   })();
 
-  const aiCfg = { provider, claudeKey: apiKey, openaiKey, deepseekKey, customEndpoint, customKey, customModel };
+  const aiCfg = { provider, claudeKey: apiKey, openaiKey, openrouterKey, deepseekKey, customEndpoint, customKey, customModel };
 
   const dialogue = DIALOGUES[activeCat]?.[0];
   const theme    = CATEGORY_THEMES[activeCat] || {};
