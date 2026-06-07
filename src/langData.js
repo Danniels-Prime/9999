@@ -1,4 +1,5 @@
 // AUTO-GENERATED from OMEGA xlsx files
+import { VAULT, VAULT_THEME } from './langDataVault.js';
 
 export const CATEGORY_THEMES = {
   survival: { color: "#00F5D4", glow: "rgba(0,245,212,0.3)", dim: "rgba(0,245,212,0.08)", label: `SURVIVAL`, icon: "🆘", cat: `🆘 SURVIVAL` },
@@ -29,6 +30,7 @@ export const CATEGORY_THEMES = {
   sl_essent: { color: "#9B5DE5", glow: "rgba(155,93,229,0.3)", dim: "rgba(155,93,229,0.08)", label: `MORE SLANG ESSENTIALS`, icon: "💬", cat: `💬 MORE SLANG ESSENTIALS` },
   sl_internet: { color: "#4D79FF", glow: "rgba(77,121,255,0.3)", dim: "rgba(77,121,255,0.08)", label: `INTERNET & CULTURE`, icon: "🎮", cat: `🎮 INTERNET & CULTURE` },
   sl_idioms: { color: "#F9C74F", glow: "rgba(249,199,79,0.3)", dim: "rgba(249,199,79,0.08)", label: `IDIOMS & EXPRESSIONS`, icon: "🏆", cat: `🏆 IDIOMS & EXPRESSIONS` },
+  sl_vault:  VAULT_THEME,
 };
 
 export const PHRASES = {
@@ -867,7 +869,8 @@ export const SLANG = {
     { id:"s_sl_idioms_120", en:`Work out the kinks`, meaning:`fix small problems`, es:`Resolver los detalles / ajustar los problemas`, en_ex:`Let's work out the kinks first.`, es_ex:`Primero resolvamos los detalles.` },
     { id:"s_sl_idioms_121", en:`You had me at hello`, meaning:`won me over immediately`, es:`Me convenciste desde el principio`, en_ex:`You had me at hello.`, es_ex:`Me convenciste desde el principio.` },
   ],
+  sl_vault: VAULT,
 };
 
 export const TOTAL_PHRASES = 414;
-export const TOTAL_SLANG = 482;
+export const TOTAL_SLANG = 558;
