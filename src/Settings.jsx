@@ -185,7 +185,7 @@ function ClassifiedCard({ unlocked, icon, codename, featureName, powers, progres
   );
 }
 
-export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, onToggleHideAnswer, knownCount = 0, totalCards = 896, apiKey = '', onSaveApiKey, openaiKey = '', onSaveOpenaiKey, openrouterKey = '', onSaveOpenrouterKey, deepseekKey = '', onSaveDeepseekKey, customEndpoint = '', onSaveCustomEndpoint, customKey = '', onSaveCustomKey, customModel = '', onSaveCustomModel, level = 1, levelPct = 0, username = '', onSaveUsername, studyMode = 'flip_es_en', onSaveStudyMode }) {
+export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, onToggleHideAnswer, knownCount = 0, totalCards = 896, apiKey = '', onSaveApiKey, openaiKey = '', onSaveOpenaiKey, openrouterKey = '', onSaveOpenrouterKey, deepseekKey = '', onSaveDeepseekKey, customEndpoint = '', onSaveCustomEndpoint, customKey = '', onSaveCustomKey, customModel = '', onSaveCustomModel, level = 1, levelPct = 0, username = '', onSaveUsername, studyMode = 'flip_es_en', onSaveStudyMode, onGoToPractice }) {
   const [showKey,   setShowKey]   = useState(false);
   const [showKey2,  setShowKey2]  = useState(false);
   const [showKeyOR, setShowKeyOR] = useState(false);
@@ -218,6 +218,20 @@ export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, on
       <div style={{ padding: '18px 0 12px', textAlign: 'center' }}>
         <h1 style={{ fontSize: '24px', fontWeight: 900, color: '#c8c6e8' }}>⚙️ Settings</h1>
       </div>
+
+      {/* Practice Hub shortcut */}
+      {onGoToPractice && (
+        <button onClick={onGoToPractice} style={{
+          width:'100%', padding:'14px', borderRadius:'16px', marginBottom:'22px',
+          border:'1.5px solid rgba(199,125,255,0.35)', background:'rgba(199,125,255,0.08)',
+          color:'#c77dff', fontSize:'14px', fontWeight:900, cursor:'pointer',
+          display:'flex', alignItems:'center', justifyContent:'center', gap:'8px',
+          fontFamily:'inherit', letterSpacing:'0.3px',
+          boxShadow:'0 0 20px rgba(199,125,255,0.15)',
+        }}>
+          🎯 Practice Hub — Chat AI · Stories · Voice Lab · Focus
+        </button>
+      )}
 
       {/* ── PROFILE ── */}
       <div style={{ marginBottom: '24px' }}>

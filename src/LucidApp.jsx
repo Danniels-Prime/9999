@@ -245,9 +245,9 @@ function HzBanner({ hz, color, onStop }) {
 function BottomNav({ view, setView, themeColor, hz, dueCount }) {
   const tabs = [
     { id:'learn',    icon:'🌙', label:'Learn'    },
+    { id:'blast',    icon:'💥', label:'Blast'    },
     { id:'quiz',     icon:'🎴', label: dueCount > 0 ? `Quiz (${dueCount})` : 'Quiz' },
     { id:'freq',     icon:'〰', label: hz ? `${hz}Hz` : 'Freq' },
-    { id:'speak',    icon:'🎯', label:'Practice'  },
     { id:'settings', icon:'⚙', label:'More'      },
   ];
   return (
@@ -443,22 +443,6 @@ export default function LucidApp() {
               themeColor={themeColor}
             />
           )}
-          {view === 'speak' && (
-            <PracticeHub
-              themeColor={themeColor}
-              voices={voices}
-              apiKey={apiKey}
-              openaiKey={openaiKey}
-              openrouterKey={openrouterKey}
-              deepseekKey={deepseekKey}
-              customEndpoint={customEndpoint}
-              customKey={customKey}
-              customModel={customModel}
-              onBack={() => setView('learn')}
-              voiceRecs={voiceRecs}
-              onSaveVoiceRecs={saveVoiceRecs}
-            />
-          )}
           {view === 'settings' && (
             <Settings
               lifetimeScore={lifetimeScore}
@@ -487,6 +471,23 @@ export default function LucidApp() {
               onSaveUsername={saveUsername}
               studyMode={studyMode}
               onSaveStudyMode={saveStudyMode}
+              onGoToPractice={() => setView('speak')}
+            />
+          )}
+          {view === 'speak' && (
+            <PracticeHub
+              themeColor={themeColor}
+              voices={voices}
+              apiKey={apiKey}
+              openaiKey={openaiKey}
+              openrouterKey={openrouterKey}
+              deepseekKey={deepseekKey}
+              customEndpoint={customEndpoint}
+              customKey={customKey}
+              customModel={customModel}
+              onBack={() => setView('settings')}
+              voiceRecs={voiceRecs}
+              onSaveVoiceRecs={saveVoiceRecs}
             />
           )}
         </div>

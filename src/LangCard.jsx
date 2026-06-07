@@ -205,7 +205,12 @@ export default function LangCard({ item, theme, isFlipped, onFlip, index, godMod
             {backText}
           </div>
           {item.meaning && !isReversed && (
-            <div style={{ fontSize:'9px', color:'#5e5c88', fontStyle:'italic', lineHeight:1.3 }}>{item.meaning}</div>
+            <div style={{ fontSize:'10px', color:cc, fontWeight:700, lineHeight:1.3, opacity:0.8 }}>{item.meaning}</div>
+          )}
+          {item.en_ex && !isReversed && (
+            <div style={{ fontSize:'9px', color:'#6b69a0', lineHeight:1.4, fontStyle:'italic', borderLeft:`2px solid ${cc}40`, paddingLeft:'6px', marginTop:'1px' }}>
+              "{item.en_ex}"
+            </div>
           )}
           <ActionRow/>
           {rateStatus==='yes' && <div style={{ fontSize:'9px', color:'#00FF88', fontWeight:700, textAlign:'center', animation:'ratePop .2s ease' }}>🌟 ¡Lo sabías!</div>}
