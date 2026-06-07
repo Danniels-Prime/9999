@@ -20,17 +20,27 @@ const HZ_COLORS = {
   528:'#00cc44', 639:'#88cc00', 741:'#00cccc', 852:'#cc0088', 963:'#cccc00',
 };
 
-/* ── Level thresholds — 40% easier ── */
-const LEVEL_XP = [0, 6, 18, 36, 66, 120, 210, 360, 600, 900, 1500, 3000];
+/* ── Infinite level system: levels 1-12 fixed, doubles every 3 levels beyond ── */
+const LEVEL_XP_TABLE = [0, 6, 18, 36, 66, 120, 210, 360, 600, 900, 1500, 3000];
+function xpForLevel(n) {
+  if (n <= 1) return 0;
+  if (n <= 12) return LEVEL_XP_TABLE[n - 1];
+  return Math.round(3000 * Math.pow(2, (n - 12) / 3));
+}
 function getLevel(xp) {
-  const idx = [...LEVEL_XP].reverse().findIndex(t => xp >= t);
-  return idx === -1 ? 1 : LEVEL_XP.length - idx;
+  if (xp < 3000) {
+    let lvl = 1;
+    for (let i = 0; i < LEVEL_XP_TABLE.length; i++) {
+      if (xp >= LEVEL_XP_TABLE[i]) lvl = i + 1;
+    }
+    return lvl;
+  }
+  return 12 + Math.floor(3 * Math.log2(xp / 3000));
 }
 function getLevelPct(xp) {
   const lvl = getLevel(xp);
-  const floor = LEVEL_XP[lvl - 1] ?? 0;
-  const ceil  = LEVEL_XP[lvl] ?? Infinity;
-  if (ceil === Infinity) return 100;
+  const floor = xpForLevel(lvl);
+  const ceil  = xpForLevel(lvl + 1);
   return Math.min(((xp - floor) / (ceil - floor)) * 100, 100);
 }
 
