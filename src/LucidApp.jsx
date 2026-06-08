@@ -251,13 +251,13 @@ function HzBanner({ hz, color, onStop }) {
   );
 }
 
-/* ── Bottom Nav (ÆTHERMIND style, 5 tabs) ── */
-function BottomNav({ view, setView, themeColor, hz, dueCount }) {
+/* ── Bottom Nav (5 tabs: Practice, Learn, Blast, Quiz, More) ── */
+function BottomNav({ view, setView, themeColor, dueCount }) {
   const tabs = [
+    { id:'practice', icon:'🎯', label:'Practice' },
     { id:'learn',    icon:'🌙', label:'Learn'    },
     { id:'blast',    icon:'💥', label:'Blast'    },
     { id:'quiz',     icon:'🎴', label: dueCount > 0 ? `Quiz (${dueCount})` : 'Quiz' },
-    { id:'freq',     icon:'〰', label: hz ? `${hz}Hz` : 'Freq' },
     { id:'settings', icon:'⚙', label:'More'      },
   ];
   return (
@@ -270,9 +270,7 @@ function BottomNav({ view, setView, themeColor, hz, dueCount }) {
     }}>
       {tabs.map(t => {
         const active = view === t.id;
-        const col = active
-          ? (t.id === 'freq' && hz ? HZ_COLORS[hz] || themeColor : themeColor)
-          : C.dim;
+        const col = active ? themeColor : C.dim;
         return (
           <div key={t.id} onClick={() => setView(t.id)} style={{
             flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:3,
@@ -314,6 +312,7 @@ export default function LucidApp() {
   const [studyStreak, setStudyStreak] = useState(0);
   const studyStreakRef = useRef(0);
   const [studyMode, _setStudyMode]    = useState(() => LS.get('lucid_study_mode', 'flip_es_en'));
+  const [defMode,   _setDefMode]      = useState(() => LS.get('lucid_def_mode', false));
 
   const saveApiKey         = useCallback((k) => { setApiKey(k);     LS.set('lucid_api_key',      k); }, []);
   const saveOpenaiKey      = useCallback((k) => { _setOAI(k);       LS.set('lucid_openai_key',   k); }, []);
@@ -324,6 +323,7 @@ export default function LucidApp() {
   const saveCustomModel    = useCallback((v) => { _setCustMod(v);   LS.set('lucid_custom_model', v); }, []);
   const saveUsername       = useCallback((n) => { _setUser(n);      LS.set('lucid_username',     n); }, []);
   const saveStudyMode      = useCallback((m) => { _setStudyMode(m); LS.set('lucid_study_mode',   m); }, []);
+  const saveDefMode        = useCallback((v) => { _setDefMode(v);   LS.set('lucid_def_mode',     v); }, []);
   const saveSrs            = useCallback((s) => { setSrsRaw(s);     LS.set('lucid_srs',          s); }, []);
   const saveVoiceRecs      = useCallback((r) => { setVoiceRecsRaw(r); LS.set('lucid_voice_recs', r); }, []);
 
@@ -420,6 +420,7 @@ export default function LucidApp() {
               username={username}
               studyMode={studyMode}
               onStudyModeChange={saveStudyMode}
+              defMode={defMode}
             />
           )}
           {view === 'quiz' && (
@@ -431,6 +432,7 @@ export default function LucidApp() {
               godMode={godMode}
               studyMode={studyMode}
               voices={voices}
+              defMode={defMode}
             />
           )}
           {view === 'blast' && (
@@ -449,7 +451,7 @@ export default function LucidApp() {
               hz={hz}
               setHz={setHz}
               audioHook={audioHook}
-              onBack={() => setView('learn')}
+              onBack={() => setView('settings')}
               themeColor={themeColor}
             />
           )}
@@ -481,10 +483,14 @@ export default function LucidApp() {
               onSaveUsername={saveUsername}
               studyMode={studyMode}
               onSaveStudyMode={saveStudyMode}
-              onGoToPractice={() => setView('speak')}
+              defMode={defMode}
+              onSaveDefMode={saveDefMode}
+              hz={hz}
+              hzColor={hzColor}
+              onGoToFreq={() => setView('freq')}
             />
           )}
-          {view === 'speak' && (
+          {view === 'practice' && (
             <PracticeHub
               themeColor={themeColor}
               voices={voices}
@@ -495,13 +501,13 @@ export default function LucidApp() {
               customEndpoint={customEndpoint}
               customKey={customKey}
               customModel={customModel}
-              onBack={() => setView('settings')}
+              onBack={() => setView('learn')}
               voiceRecs={voiceRecs}
               onSaveVoiceRecs={saveVoiceRecs}
             />
           )}
         </div>
-        <BottomNav view={view} setView={setView} themeColor={themeColor} hz={hz} dueCount={dueCount} />
+        <BottomNav view={view} setView={setView} themeColor={themeColor} dueCount={dueCount} />
       </div>
     </div>
   );

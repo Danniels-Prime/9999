@@ -1,5 +1,26 @@
 import { useState, useCallback } from 'react';
 
+const WORD_EMOJI = {
+  'water':'💧','coffee':'☕','milk':'🥛','juice':'🧃',
+  'bread':'🍞','meat':'🥩','chicken':'🍗','fish':'🐟',
+  'vegetables':'🥦','vegetable':'🥦','beer':'🍺','wine':'🍷',
+  'tea':'🍵','apple':'🍎','egg':'🥚','eggs':'🥚',
+  'rice':'🍚','pasta':'🍝','pizza':'🍕','burger':'🍔',
+  'salad':'🥗','soup':'🍲','ice cream':'🍦','cake':'🎂',
+  'cookie':'🍪','phone':'📱','book':'📚','car':'🚗',
+  'house':'🏠','dog':'🐕','cat':'🐈','sun':'☀️',
+  'moon':'🌙','star':'⭐','money':'💰','music':'🎵',
+  'computer':'💻','shirt':'👕','shoes':'👟','hat':'🎩',
+  'bus':'🚌','train':'🚂','plane':'✈️','boat':'⛵',
+  'clock':'⏰','key':'🔑','door':'🚪','tree':'🌳',
+  'flower':'🌸','rain':'🌧️','snow':'❄️',
+};
+
+function getWordEmoji(en) {
+  if (!en) return null;
+  return WORD_EMOJI[en.toLowerCase().trim()] || null;
+}
+
 function MiniWave({ color }) {
   return (
     <span style={{ display:'inline-flex', gap:'2px', alignItems:'center', height:'14px' }}>
@@ -20,7 +41,7 @@ function fuzzyMatch(input, target) {
   return target.split(/[/,]/).map(t => norm(t.trim())).some(t => t === inp);
 }
 
-export default function LangCard({ item, theme, isFlipped, onFlip, index, godMode, isPlaying, onSpeak, rateStatus, onRate, studyMode }) {
+export default function LangCard({ item, theme, isFlipped, onFlip, index, godMode, isPlaying, onSpeak, rateStatus, onRate, studyMode, defMode = false }) {
   const [typeInput, setTypeInput]   = useState('');
   const [typeResult, setTypeResult] = useState(null); // null | 'correct' | 'wrong'
   const [showInput, setShowInput]   = useState(false);
@@ -178,6 +199,13 @@ export default function LangCard({ item, theme, isFlipped, onFlip, index, godMod
 
   /* ── FLIP MODES (default, en_es, random, weak, speed) ── */
   const isSpeedMode = studyMode === 'speed';
+  const emoji = getWordEmoji(item.en);
+
+  // In defMode, show the meaning as the primary back content (English definition)
+  const backPrimary   = (defMode && !isReversed && item.meaning) ? item.meaning : backText;
+  const backPrimaryFs = (defMode && !isReversed && item.meaning)
+    ? (item.meaning.length > 40 ? '11px' : item.meaning.length > 24 ? '13px' : '15px')
+    : backSize;
 
   return (
     <div className={`lang-card${isFlipped?' flipped':''}${godMode?' god-mode':''}${isKnown?' known-glow':''}`}
@@ -191,6 +219,12 @@ export default function LangCard({ item, theme, isFlipped, onFlip, index, godMod
           {isKnown?'✅':'❌'}
         </div>
       )}
+
+      {/* Emoji for concrete nouns (front face only) */}
+      {emoji && !isFlipped && (
+        <div style={{ fontSize:'28px', lineHeight:1, marginBottom:'2px' }}>{emoji}</div>
+      )}
+
       <div style={{ fontSize:'10px', color:isReversed?cc:'#6b69a0', fontWeight:800, letterSpacing:'0.8px' }}>{frontLang}</div>
       <div style={{ fontSize:frontSize, fontWeight:900, color:frontColor, lineHeight:1.3,
         textShadow:isFlipped?(isReversed?`0 0 14px ${cc}80`:'0 0 14px #FFD70080'):'none', transition:'text-shadow .2s' }}>
@@ -201,12 +235,19 @@ export default function LangCard({ item, theme, isFlipped, onFlip, index, godMod
         <>
           <div style={{ width:'100%', height:'1px', background:'rgba(255,255,255,0.07)', margin:'1px 0', flexShrink:0 }}/>
           <div style={{ fontSize:'10px', color:isReversed?'#6b69a0':cc, fontWeight:800, letterSpacing:'0.8px' }}>{backLang}</div>
-          <div style={{ fontSize:backSize, fontWeight:900, color:backColor, lineHeight:1.25, textShadow:backGlow, letterSpacing:'-0.3px', padding:'4px 0 2px' }}>
-            {backText}
+          {/* Primary back content */}
+          <div style={{ fontSize:backPrimaryFs, fontWeight:900, color:backColor, lineHeight:1.25, textShadow:backGlow, letterSpacing:'-0.3px', padding:'4px 0 2px' }}>
+            {backPrimary}
           </div>
-          {item.meaning && !isReversed && (
+          {/* In defMode: show the English word smaller below the definition */}
+          {defMode && !isReversed && item.meaning && (
+            <div style={{ fontSize:'11px', color:`${cc}99`, fontWeight:700, lineHeight:1.2 }}>{backText}</div>
+          )}
+          {/* Meaning (shown when NOT in defMode) */}
+          {!defMode && item.meaning && !isReversed && (
             <div style={{ fontSize:'10px', color:cc, fontWeight:700, lineHeight:1.3, opacity:0.8 }}>{item.meaning}</div>
           )}
+          {/* English example sentence */}
           {item.en_ex && !isReversed && (
             <div style={{ fontSize:'9px', color:'#6b69a0', lineHeight:1.4, fontStyle:'italic', borderLeft:`2px solid ${cc}40`, paddingLeft:'6px', marginTop:'1px' }}>
               "{item.en_ex}"
