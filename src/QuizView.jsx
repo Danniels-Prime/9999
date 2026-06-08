@@ -138,6 +138,14 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
     if (typeMode && inputRef.current) inputRef.current.focus();
   }, [idx, typeMode]);
 
+  // reset type input on card change
+  useEffect(() => { setTypeInput(''); setTypeResult(null); }, [idx]);
+
+  // auto-focus input in type mode
+  useEffect(() => {
+    if (typeMode && inputRef.current) inputRef.current.focus();
+  }, [idx, typeMode]);
+
   const showFront = studyMode === 'flip_en_es' ? card?.en : card?.es;
   const showBack  = studyMode === 'flip_en_es' ? card?.es : card?.en;
 
@@ -441,6 +449,56 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
               <div style={{ fontSize:11, color:`${C.dim}`, fontStyle:'italic', marginTop:6, lineHeight:1.4 }}>
                 "{card.en_ex}"
               </div>
+            )}
+          </div>
+        )}
+
+        {/* Type mode: input field */}
+        {typeMode && !typeResult && (
+          <div style={{ marginTop:20, width:'100%' }} onClick={e => e.stopPropagation()}>
+            <input
+              ref={inputRef}
+              className="quiz-type-input"
+              value={typeInput}
+              onChange={e => setTypeInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && submitAnswer()}
+              placeholder="type in English…"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              style={{
+                width:'100%', padding:'14px 16px', borderRadius:14, fontSize:16,
+                background:C.ghost, border:`1.5px solid ${C.dim}55`,
+                color:C.silver, fontFamily:"'Outfit',sans-serif",
+                boxSizing:'border-box', transition:'border-color .2s, box-shadow .2s',
+              }}
+            />
+            <button
+              onClick={e => { e.stopPropagation(); submitAnswer(); }}
+              style={{
+                width:'100%', marginTop:10, padding:'14px 0', borderRadius:14,
+                background:`${tc}18`, border:`1.5px solid ${tc}55`, color:tc,
+                fontSize:15, fontWeight:800, cursor:'pointer', fontFamily:"'Outfit',sans-serif",
+              }}
+            >Check →</button>
+          </div>
+        )}
+
+        {/* Type mode: correct result */}
+        {typeMode && typeResult === 'correct' && (
+          <div style={{ marginTop:20, textAlign:'center', animation:'correctPop .4s ease' }}>
+            <div style={{ color:C.bio, fontSize:28, fontWeight:900, marginBottom:6 }}>✓ Correct!</div>
+            <div style={{ color:`${C.silver}99`, fontSize:14 }}>{showBack}</div>
+          </div>
+        )}
+
+        {/* Type mode: wrong result */}
+        {typeMode && typeResult === 'wrong' && (
+          <div style={{ marginTop:20, textAlign:'center', animation:'wrongShake .4s ease' }}>
+            <div style={{ color:C.red, fontSize:15, fontWeight:800, marginBottom:8 }}>✗ The answer was:</div>
+            <div style={{ color:C.silver, fontSize:24, fontWeight:700 }}>{showBack}</div>
+            {card?.meaning && (
+              <div style={{ color:`${C.silver}77`, fontSize:12, marginTop:8, fontStyle:'italic' }}>{card.meaning}</div>
             )}
           </div>
         )}
