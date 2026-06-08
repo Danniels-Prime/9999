@@ -186,7 +186,7 @@ function ClassifiedCard({ unlocked, icon, codename, featureName, powers, progres
   );
 }
 
-export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, onToggleHideAnswer, knownCount = 0, totalCards = 896, apiKey = '', onSaveApiKey, openaiKey = '', onSaveOpenaiKey, openrouterKey = '', onSaveOpenrouterKey, deepseekKey = '', onSaveDeepseekKey, customEndpoint = '', onSaveCustomEndpoint, customKey = '', onSaveCustomKey, customModel = '', onSaveCustomModel, level = 1, levelPct = 0, username = '', onSaveUsername, studyMode = 'flip_es_en', onSaveStudyMode, defMode = false, onSaveDefMode, hz = null, hzColor = null, onGoToFreq, onGoToPractice }) {
+export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, onToggleHideAnswer, knownCount = 0, totalCards = 896, apiKey = '', onSaveApiKey, openaiKey = '', onSaveOpenaiKey, openrouterKey = '', onSaveOpenrouterKey, deepseekKey = '', onSaveDeepseekKey, customEndpoint = '', onSaveCustomEndpoint, customKey = '', onSaveCustomKey, customModel = '', onSaveCustomModel, level = 1, levelPct = 0, username = '', onSaveUsername, studyMode = 'flip_es_en', onSaveStudyMode, defMode = false, onSaveDefMode, autoRead = true, onSaveAutoRead, hz = null, hzColor = null, onGoToFreq, onGoToPractice }) {
   const [showKey,   setShowKey]   = useState(false);
   const [showKey2,  setShowKey2]  = useState(false);
   const [showKeyOR, setShowKeyOR] = useState(false);
@@ -402,6 +402,14 @@ export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, on
             onToggle={() => onSaveDefMode?.(!defMode)}
             label="📖 Definition Mode"
             sub="Show English explanation instead of Spanish translation on card flip"
+          />
+        </div>
+        <div style={{ marginTop:'10px' }}>
+          <Toggle
+            on={autoRead}
+            onToggle={() => onSaveAutoRead?.(!autoRead)}
+            label="🔊 Read Aloud"
+            sub="Auto-speak English phrase & example sentence on card flip"
           />
         </div>
       </div>

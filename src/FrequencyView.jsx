@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useRef } from 'react';
 
 const FREQS = [
   {hz:174,name:'Liberation',desc:'Pain relief & security',color:'#8800ff'},
@@ -18,10 +18,36 @@ const waveKeys = useMemo ? null : null; // suppress lint
 
 export default function FrequencyView({ hz, setHz, audioHook, onBack, themeColor = '#c77dff' }) {
   const { play, stop } = audioHook;
+  const [customFile,    setCustomFile]    = useState(null);
+  const [customUrl,     setCustomUrl]     = useState(null);
+  const [customPlaying, setCustomPlaying] = useState(false);
+  const [customLoop,    setCustomLoop]    = useState(true);
+  const audioRef = useRef(null);
 
   const toggle = (f) => {
     if (hz === f.hz) { stop(); setHz(null); }
     else { play(f.hz); setHz(f.hz); }
+  };
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    if (customUrl) URL.revokeObjectURL(customUrl);
+    setCustomUrl(url);
+    setCustomFile(file.name);
+    setCustomPlaying(false);
+  };
+
+  const toggleCustomPlay = () => {
+    if (!audioRef.current) return;
+    if (customPlaying) {
+      audioRef.current.pause();
+      setCustomPlaying(false);
+    } else {
+      audioRef.current.play();
+      setCustomPlaying(true);
+    }
   };
 
   return (
@@ -89,6 +115,49 @@ export default function FrequencyView({ hz, setHz, audioHook, onBack, themeColor
             </div>
           );
         })}
+      </div>
+
+      {/* Custom Audio */}
+      <div style={{ marginTop:24, paddingTop:20, borderTop:'1px solid rgba(255,255,255,0.07)' }}>
+        <div style={{ fontSize:10, color:'#5e5c88', letterSpacing:2, fontWeight:800, marginBottom:12, fontFamily:"'Space Mono',monospace" }}>
+          CUSTOM AUDIO
+        </div>
+        <label style={{ display:'block', cursor:'pointer' }}>
+          <input type="file" accept="audio/*,video/mp4" onChange={handleFileSelect} style={{ display:'none' }} />
+          <div style={{
+            padding:'13px', borderRadius:14, border:`1px solid ${customFile ? themeColor+'55' : '#27254a'}`,
+            background: customFile ? `${themeColor}09` : 'rgba(255,255,255,0.03)',
+            color: customFile ? '#c8c6e8' : '#5e5c88', fontSize:12, textAlign:'center',
+            fontFamily:"'Space Mono',monospace", letterSpacing:1, transition:'all .2s',
+          }}>
+            {customFile ? `🎵 ${customFile.length > 30 ? customFile.slice(0,28)+'…' : customFile}` : '＋ Upload MP3 / MP4'}
+          </div>
+        </label>
+        {customFile && (
+          <div style={{ display:'flex', gap:8, marginTop:10 }}>
+            <button onClick={toggleCustomPlay} style={{
+              flex:1, padding:'13px', borderRadius:14, fontSize:15, cursor:'pointer',
+              background: customPlaying ? `${themeColor}22` : 'rgba(255,255,255,0.04)',
+              border: `1px solid ${customPlaying ? themeColor : '#27254a'}`,
+              color: customPlaying ? themeColor : '#c8c6e8', fontWeight:800, transition:'all .2s',
+            }}>
+              {customPlaying ? '■ Pause' : '▶ Play'}
+            </button>
+            <button onClick={() => {
+              const next = !customLoop;
+              setCustomLoop(next);
+              if (audioRef.current) audioRef.current.loop = next;
+            }} style={{
+              padding:'13px 16px', borderRadius:14, fontSize:13, cursor:'pointer', fontWeight:800,
+              background: customLoop ? `${themeColor}15` : 'rgba(255,255,255,0.04)',
+              border: `1px solid ${customLoop ? themeColor : '#27254a'}`,
+              color: customLoop ? themeColor : '#5e5c88', transition:'all .2s',
+            }}>
+              🔁
+            </button>
+          </div>
+        )}
+        {customUrl && <audio ref={audioRef} src={customUrl} loop={customLoop} />}
       </div>
 
       {hz && (

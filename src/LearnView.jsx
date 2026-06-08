@@ -15,7 +15,7 @@ const STUDY_MODES = [
   { id:'match',       icon:'🃏',  label:'Match' },
 ];
 
-export default function LearnView({ godMode, voices, known, srs = {}, onRate, onThemeChange, level, levelPct, lifetimeScore, studyStreak = 0, username = '', studyMode = 'flip_es_en', onStudyModeChange, defMode = false }) {
+export default function LearnView({ godMode, voices, known, srs = {}, onRate, onThemeChange, level, levelPct, lifetimeScore, studyStreak = 0, username = '', studyMode = 'flip_es_en', onStudyModeChange, defMode = false, autoRead = true }) {
   const [mode, setMode]           = useState('phrases');
   const [activeCat, setActiveCat] = useState(null);
   const [flipped, setFlipped]     = useState(new Set());
@@ -66,17 +66,25 @@ export default function LearnView({ godMode, voices, known, srs = {}, onRate, on
 
   const speak = useCallback((item) => {
     window.speechSynthesis.cancel();
-    const utt = new SpeechSynthesisUtterance(item.en);
-    utt.lang  = 'en-US';
-    utt.rate  = 0.82;
-    utt.pitch = 1.05;
-    const pref = voices.find(v => v.lang === 'en-US') || voices.find(v => v.lang.startsWith('en'));
-    if (pref) utt.voice = pref;
-    utt.onstart = () => setPlayingId(item.id);
-    utt.onend   = () => setPlayingId(null);
-    utt.onerror = () => setPlayingId(null);
-    window.speechSynthesis.speak(utt);
-  }, [voices]);
+    const mkUtt = (text) => {
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'en-US'; u.rate = 0.82; u.pitch = 1.05;
+      const pref = voices.find(v => v.lang === 'en-US') || voices.find(v => v.lang.startsWith('en'));
+      if (pref) u.voice = pref;
+      return u;
+    };
+    const utt1 = mkUtt(item.en);
+    utt1.onstart = () => setPlayingId(item.id);
+    if (!autoRead || !item.en_ex) utt1.onend = () => setPlayingId(null);
+    utt1.onerror = () => setPlayingId(null);
+    window.speechSynthesis.speak(utt1);
+    if (autoRead && item.en_ex) {
+      const utt2 = mkUtt(item.en_ex);
+      utt2.onend = () => setPlayingId(null);
+      utt2.onerror = () => setPlayingId(null);
+      window.speechSynthesis.speak(utt2);
+    }
+  }, [voices, autoRead]);
 
   const toggleFlip = useCallback((item) => {
     if (studyMode === 'speed' && timerDone) return;
