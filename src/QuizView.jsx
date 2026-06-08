@@ -53,9 +53,13 @@ function getWordEmoji(en) {
   return WORD_EMOJI[lower] || null;
 }
 
-function getDueQueue(srs, catItems = null) {
+function getDueQueue(srs, catItems = null, weakOnly = false) {
   const pool = catItems ?? ALL_VOCAB;
   const now = Date.now();
+  if (weakOnly) {
+    const weak = pool.filter(v => srs[v.id]?.reps === 0 || (srs[v.id] && now >= srs[v.id].nextReview));
+    return weak.length > 0 ? weak.slice(0, 20) : pool.slice(0, 20);
+  }
   const due = pool.filter(v => { const s = srs[v.id]; return !s || now >= s.nextReview; });
   return due.length > 0 ? due.slice(0, 20) : pool.slice(0, 20);
 }
@@ -95,63 +99,143 @@ function CompletionScreen({ easy, again, onRestart }) {
   );
 }
 
+/* ── Pair Match mini-game ── */
+function PairMatch({ items, onRate, tc }) {
+  const pick = useCallback(() => {
+    const pool = [...items].sort(() => Math.random() - 0.5).slice(0, 5);
+    const tiles = [
+      ...pool.map(it => ({ id: it.id, side: 'es', text: it.es.split('/')[0].trim(), item: it })),
+      ...pool.map(it => ({ id: it.id, side: 'en', text: it.en.split('/')[0].trim(), item: it })),
+    ].sort(() => Math.random() - 0.5);
+    return { pool, tiles };
+  }, [items]);
+
+  const [state, setState] = useState(() => pick());
+  const [selected, setSelected] = useState(null);
+  const [matched, setMatched] = useState(new Set());
+  const [wrong, setWrong] = useState(new Set());
+  const [done, setDone] = useState(false);
+
+  const reset = useCallback(() => {
+    const s = pick();
+    setState(s);
+    setSelected(null);
+    setMatched(new Set());
+    setWrong(new Set());
+    setDone(false);
+  }, [pick]);
+
+  const handleTap = (tileIdx) => {
+    const tile = state.tiles[tileIdx];
+    if (matched.has(tile.id + tile.side)) return;
+    if (wrong.has(tileIdx)) return;
+
+    if (selected === null) {
+      setSelected(tileIdx);
+      return;
+    }
+    if (selected === tileIdx) { setSelected(null); return; }
+
+    const selTile = state.tiles[selected];
+    if (selTile.id === tile.id && selTile.side !== tile.side) {
+      const nm = new Set(matched);
+      nm.add(tile.id + tile.side);
+      nm.add(selTile.id + selTile.side);
+      setMatched(nm);
+      setSelected(null);
+      onRate(tile.id, true);
+      if (nm.size === state.tiles.length) setDone(true);
+    } else {
+      const nw = new Set([tileIdx, selected]);
+      setWrong(nw);
+      setSelected(null);
+      setTimeout(() => setWrong(new Set()), 700);
+    }
+  };
+
+  if (done) return (
+    <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', flex:1, gap:16 }}>
+      <div style={{ fontSize:48 }}>🎉</div>
+      <div style={{ color:C.bio, fontFamily:"'Bebas Neue',display", fontSize:28, letterSpacing:2 }}>¡PERFECTO!</div>
+      <button onClick={reset} style={{
+        padding:'12px 28px', borderRadius:14, fontSize:15, fontWeight:700,
+        background:`${tc}22`, border:`1.5px solid ${tc}66`, color:tc,
+        cursor:'pointer', fontFamily:"'Outfit',sans-serif",
+      }}>Next Round →</button>
+    </div>
+  );
+
+  return (
+    <div style={{ flex:1, overflowY:'auto' }}>
+      <div style={{ fontSize:11, color:C.dim, textAlign:'center', marginBottom:10, fontFamily:"'Space Mono',monospace", letterSpacing:1 }}>
+        TAP MATCHING PAIRS
+      </div>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+        {state.tiles.map((tile, i) => {
+          const isMatched = matched.has(tile.id + tile.side);
+          const isWrong   = wrong.has(i);
+          const isSel     = selected === i;
+          return (
+            <button key={i} onClick={() => !isMatched && handleTap(i)} style={{
+              padding:'12px 8px', borderRadius:14, fontSize:12, fontWeight:700, textAlign:'center',
+              lineHeight:1.3, cursor: isMatched ? 'default' : 'pointer',
+              background: isMatched ? `${C.bio}18` : isSel ? `${tc}22` : isWrong ? `${C.red}18` : C.card,
+              border: `1.5px solid ${isMatched ? C.bio : isSel ? tc : isWrong ? C.red : C.dim}${isMatched||isSel||isWrong?'aa':'44'}`,
+              color: isMatched ? C.bio : isSel ? tc : isWrong ? C.red : tile.side === 'es' ? '#FFD700' : C.silver,
+              opacity: isMatched ? 0.5 : 1,
+              transition:'all .15s',
+              fontFamily:"'Outfit',sans-serif",
+            }}>
+              <div style={{ fontSize:9, color:isMatched?C.bio:tile.side==='es'?'#FFD70099':`${tc}99`, marginBottom:3, letterSpacing:1 }}>
+                {tile.side === 'es' ? '🇪🇸' : '🇺🇸'}
+              </div>
+              {tile.text}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77dff', godMode, studyMode = 'flip_es_en', voices = [], defMode = false }) {
   const [selectedCat, setSelectedCat] = useState('__all__');
-  const [queue, setQueue]             = useState(() => getDueQueue(srs));
+  const [queue, setQueue]             = useState(() => getDueQueue(srs, null, studyMode === 'weak'));
   const [idx, setIdx]                 = useState(0);
-  const [flipped, setFlipped]         = useState(false);
+  const [flipped, setFlipped]         = useState(studyMode === 'flip_both');
   const [sessionEasy, setEasy]        = useState(0);
   const [sessionAgain, setAgain]      = useState(0);
   const [anim, setAnim]               = useState('');
-  const [typeMode, setTypeMode]       = useState(() => {
-    try { return JSON.parse(localStorage.getItem('lucid_quiz_typemode') ?? 'false'); } catch { return false; }
-  });
   const [typeInput, setTypeInput]     = useState('');
-  const [typeResult, setTypeResult]   = useState(null); // null | 'correct' | 'wrong'
+  const [typeResult, setTypeResult]   = useState(null);
+  const [timeLeft, setTimeLeft]       = useState(30);
   const cardRef   = useRef(null);
   const inputRef  = useRef(null);
   const catRowRef = useRef(null);
 
+  const isTypeMode   = studyMode === 'type' || studyMode === 'listen';
+  const isMatchMode  = studyMode === 'match';
+  const isSpeedMode  = studyMode === 'speed';
+  const isBothMode   = studyMode === 'flip_both';
+  const isImmersion  = studyMode === 'flip_def';
+  const isWeakMode   = studyMode === 'weak';
+
   const card   = queue[idx];
   const isDone = !card && (sessionEasy + sessionAgain > 0);
 
-  const toggleTypeMode = () => setTypeMode(m => {
-    const next = !m;
-    localStorage.setItem('lucid_quiz_typemode', JSON.stringify(next));
-    return next;
-  });
+  /* ── Direction logic ── */
+  const isReversedDir = !isImmersion && (studyMode === 'flip_en_es' ||
+    (studyMode === 'flip_random' && card?.id.charCodeAt(card.id.length - 1) % 2 === 1));
 
-  // refresh when srs changes and queue is empty at session start
-  useEffect(() => {
-    if (!card && sessionEasy + sessionAgain === 0) {
-      const cat = ALL_CATS.find(c => c.key === selectedCat);
-      setQueue(getDueQueue(srs, cat?.items ?? null));
-      setIdx(0);
-    }
-  }, [srs, card, sessionEasy, sessionAgain, selectedCat]);
+  const showFront = isImmersion ? card?.en : (isReversedDir ? card?.en : card?.es);
+  const showBack  = isImmersion
+    ? (card?.meaning || card?.en)
+    : (isReversedDir ? card?.es : card?.en);
+  const frontLangLabel = isImmersion ? '🇺🇸 EN' : (isReversedDir ? '🇺🇸 EN' : '🇪🇸 ES');
+  const backLangLabel  = isImmersion ? '📖 MEANING' : (isReversedDir ? '🇪🇸 ES' : '🇺🇸 EN');
 
-  // reset type input on card change
-  useEffect(() => { setTypeInput(''); setTypeResult(null); }, [idx]);
-
-  // auto-focus input in type mode
-  useEffect(() => {
-    if (typeMode && inputRef.current) inputRef.current.focus();
-  }, [idx, typeMode]);
-
-  // reset type input on card change
-  useEffect(() => { setTypeInput(''); setTypeResult(null); }, [idx]);
-
-  // auto-focus input in type mode
-  useEffect(() => {
-    if (typeMode && inputRef.current) inputRef.current.focus();
-  }, [idx, typeMode]);
-
-  const showFront = studyMode === 'flip_en_es' ? card?.en : card?.es;
-  const showBack  = studyMode === 'flip_en_es' ? card?.es : card?.en;
-
-  // In definition mode, display the meaning as the primary reveal (type mode still matches against showBack)
-  const revealPrimary   = (defMode && card?.meaning) ? card.meaning : showBack;
-  const revealSecondary = (defMode && card?.meaning) ? showBack : null;
+  const revealPrimary   = (defMode && !isImmersion && card?.meaning) ? card.meaning : showBack;
+  const revealSecondary = (defMode && !isImmersion && card?.meaning) ? showBack : null;
 
   const speak = useCallback((text) => {
     window.speechSynthesis.cancel();
@@ -162,13 +246,51 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
     window.speechSynthesis.speak(utt);
   }, [voices]);
 
-  // Auto-play English audio on each new card (skip in type mode — would reveal answer)
+  /* ── Refresh queue when empty at session start ── */
   useEffect(() => {
-    if (card && !typeMode) {
-      const timer = setTimeout(() => speak(card.en), 350);
-      return () => clearTimeout(timer);
+    if (!card && sessionEasy + sessionAgain === 0) {
+      const cat = ALL_CATS.find(c => c.key === selectedCat);
+      setQueue(getDueQueue(srs, cat?.items ?? null, isWeakMode));
+      setIdx(0);
+    }
+  }, [srs, card, sessionEasy, sessionAgain, selectedCat, isWeakMode]);
+
+  /* ── Reset type input on card change ── */
+  useEffect(() => { setTypeInput(''); setTypeResult(null); }, [idx]);
+
+  /* ── Auto-focus input in type/listen mode ── */
+  useEffect(() => {
+    if (isTypeMode && inputRef.current) inputRef.current.focus();
+  }, [idx, isTypeMode]);
+
+  /* ── flip_both: always show both sides ── */
+  useEffect(() => {
+    setFlipped(isBothMode);
+  }, [idx, isBothMode]);
+
+  /* ── Auto-play audio on new card ── */
+  useEffect(() => {
+    if (!card) return;
+    if (studyMode === 'listen') {
+      const t = setTimeout(() => speak(card.en), 400);
+      return () => clearTimeout(t);
+    }
+    if (!isTypeMode) {
+      const t = setTimeout(() => speak(card.en), 350);
+      return () => clearTimeout(t);
     }
   }, [idx]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* ── Speed mode: 30-second countdown ── */
+  useEffect(() => {
+    if (!isSpeedMode) { setTimeLeft(30); return; }
+    setTimeLeft(30);
+    const t = setInterval(() => setTimeLeft(s => {
+      if (s <= 1) { clearInterval(t); answer('again'); return 0; }
+      return s - 1;
+    }), 1000);
+    return () => clearInterval(t);
+  }, [idx, isSpeedMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const answer = useCallback((type) => {
     if (!card) return;
@@ -182,14 +304,14 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
       setQueue(prev => [...prev, card]);
     }
     setTimeout(() => {
-      setFlipped(false);
+      setFlipped(isBothMode);
       setIdx(i => i + 1);
     }, 280);
-  }, [card, onRate]);
+  }, [card, onRate, isBothMode]);
 
   const submitAnswer = useCallback(() => {
     if (!typeInput.trim() || typeResult) return;
-    const correct = fuzzyMatch(typeInput, showBack ?? '');
+    const correct = fuzzyMatch(typeInput, card?.en ?? '');
     setTypeResult(correct ? 'correct' : 'wrong');
     if (correct) {
       if (card?.en) speak(card.en);
@@ -197,10 +319,10 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
     } else {
       setTimeout(() => answer('again'), 1600);
     }
-  }, [typeInput, typeResult, showBack, answer, card, speak]);
+  }, [typeInput, typeResult, card, speak, answer]);
 
   const handleReveal = () => {
-    if (!flipped && !typeMode) {
+    if (!flipped && !isTypeMode) {
       setFlipped(true);
       if (card?.en) speak(card.en);
     }
@@ -209,22 +331,22 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
   const handleCatChange = (catKey) => {
     const cat = ALL_CATS.find(c => c.key === catKey);
     setSelectedCat(catKey);
-    setQueue(getDueQueue(srs, cat?.items ?? null));
+    setQueue(getDueQueue(srs, cat?.items ?? null, isWeakMode));
     setIdx(0);
     setEasy(0);
     setAgain(0);
-    setFlipped(false);
+    setFlipped(isBothMode);
     setTypeInput('');
     setTypeResult(null);
   };
 
   const restart = () => {
     const cat = ALL_CATS.find(c => c.key === selectedCat);
-    setQueue(getDueQueue(srs, cat?.items ?? null));
+    setQueue(getDueQueue(srs, cat?.items ?? null, isWeakMode));
     setIdx(0);
     setEasy(0);
     setAgain(0);
-    setFlipped(false);
+    setFlipped(isBothMode);
     setTypeInput('');
     setTypeResult(null);
   };
@@ -285,37 +407,47 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
         })}
       </div>
 
-      {/* Progress bar + type mode toggle */}
-      <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12, flexShrink:0 }}>
+      {/* Progress bar */}
+      <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom: isSpeedMode ? 6 : 12, flexShrink:0 }}>
         <div style={{ flex:1, height:4, background:C.ghost, borderRadius:2, overflow:'hidden' }}>
           <div style={{ height:'100%', width:`${progress}%`, background:`linear-gradient(90deg,${tc},${C.cyan})`, transition:'width .4s ease', borderRadius:2 }}/>
         </div>
         <span style={{ color:C.dim, fontSize:11, minWidth:36, textAlign:'right', fontFamily:"'Space Mono',monospace" }}>{idx+1}/{total}</span>
-        <button
-          onClick={toggleTypeMode}
-          title={typeMode ? 'Switch to reveal mode' : 'Switch to type mode'}
-          style={{
-            padding:'4px 10px', borderRadius:8, fontSize:12, fontWeight:800,
-            background: typeMode ? `${tc}22` : 'rgba(255,255,255,0.04)',
-            border:`1px solid ${typeMode ? tc : C.dim}55`,
-            color: typeMode ? tc : C.dim,
-            cursor:'pointer', fontFamily:"'Outfit',sans-serif", flexShrink:0,
-            transition:'all .15s',
-          }}
-        >⌨️</button>
       </div>
 
-      {/* Card */}
+      {/* Speed mode timer bar */}
+      {isSpeedMode && (
+        <div style={{ marginBottom:8, flexShrink:0 }}>
+          <div style={{ height:6, background:C.ghost, borderRadius:3, overflow:'hidden' }}>
+            <div style={{
+              height:'100%', borderRadius:3,
+              width:`${(timeLeft / 30) * 100}%`,
+              background: timeLeft <= 10 ? C.red : timeLeft <= 20 ? '#FFD700' : C.bio,
+              transition:'width 1s linear, background .5s',
+            }}/>
+          </div>
+          <div style={{ fontSize:11, color: timeLeft <= 10 ? C.red : C.dim, textAlign:'right', marginTop:2, fontFamily:"'Space Mono',monospace" }}>
+            {timeLeft}s
+          </div>
+        </div>
+      )}
+
+      {/* Match mode: inline pair game */}
+      {isMatchMode ? (
+        <PairMatch items={queue} onRate={(id, yes) => onRate(id, yes)} tc={tc} />
+      ) : (
+
+      /* Card */
       <div
         ref={cardRef}
-        onClick={!typeMode ? handleReveal : undefined}
+        onClick={!isTypeMode && !isBothMode ? handleReveal : undefined}
         style={{
           flex:1, overflowY:'auto',
           background:`linear-gradient(145deg,${C.card},${C.glass})`,
           border:`1.5px solid ${tc}${flipped || typeResult ? 'aa' : '33'}`,
           borderRadius:24, padding:'24px 20px',
           display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
-          cursor: (!typeMode && !flipped) ? 'pointer' : 'default',
+          cursor: (!isTypeMode && !isBothMode && !flipped) ? 'pointer' : 'default',
           userSelect:'none',
           boxShadow: (flipped || typeResult) ? `0 0 28px ${tc}33,inset 0 0 40px ${tc}11` : `0 0 16px ${tc}18`,
           transition:'border-color .3s, box-shadow .3s',
@@ -335,6 +467,11 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
           </div>
         )}
 
+        {/* Lang label */}
+        <div style={{ fontSize:10, color:C.dim, fontWeight:800, letterSpacing:1, marginBottom:4 }}>
+          {frontLangLabel}
+        </div>
+
         {/* Front word */}
         <div style={{
           fontFamily:"'Bebas Neue',display", fontSize: showFront && showFront.length > 20 ? 32 : 48,
@@ -344,46 +481,61 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
           {showFront}
         </div>
 
+        {/* listen mode: tap to hear button */}
+        {studyMode === 'listen' && !typeResult && (
+          <button
+            onClick={e => { e.stopPropagation(); speak(card.en); }}
+            style={{
+              marginTop:16, padding:'10px 20px', borderRadius:12, fontSize:22,
+              background:`${tc}18`, border:`1.5px solid ${tc}55`, cursor:'pointer',
+              color:tc, transition:'all .15s',
+            }}
+          >🔊 Play Again</button>
+        )}
+
         {/* Reveal mode: TAP TO REVEAL hint */}
-        {!typeMode && !flipped && (
+        {!isTypeMode && !flipped && !isBothMode && (
           <div style={{ marginTop:20, color:C.dim, fontSize:12, letterSpacing:2, fontFamily:"'Space Mono',monospace" }}>
             TAP TO REVEAL
           </div>
         )}
 
-        {/* Reveal mode: flipped content */}
-        {!typeMode && flipped && (
-          <div style={{ marginTop:20, width:'100%', borderTop:`1px solid ${C.dim}33`, paddingTop:18, textAlign:'center', animation:'revealIn .3s ease' }}>
-            {/* Primary reveal (meaning in defMode, English word otherwise) */}
+        {/* Reveal mode OR both mode: flipped content */}
+        {!isTypeMode && flipped && (
+          <div style={{ marginTop:20, width:'100%', borderTop:`1px solid ${C.dim}33`, paddingTop:18, textAlign:'center', animation: isBothMode ? 'none' : 'revealIn .3s ease' }}>
+            <div style={{ fontSize:10, color: isImmersion ? tc : C.dim, fontWeight:800, letterSpacing:1, marginBottom:6 }}>
+              {backLangLabel}
+            </div>
+            {/* Primary reveal */}
             <div style={{
-              fontSize: defMode ? 16 : 22,
-              color: defMode ? `${C.silver}cc` : C.silver,
-              fontWeight: defMode ? 600 : 700,
+              fontSize: (isImmersion || defMode) ? 16 : 22,
+              color: (isImmersion || defMode) ? `${C.silver}cc` : C.silver,
+              fontWeight: (isImmersion || defMode) ? 600 : 700,
               marginBottom:8, lineHeight:1.4,
             }}>
-              {revealPrimary}
+              {isImmersion ? showBack : revealPrimary}
             </div>
-            {/* Secondary: English word when in defMode */}
-            {revealSecondary && (
+            {/* In defMode (non-immersion): show EN word below meaning */}
+            {!isImmersion && revealSecondary && (
               <div style={{ fontSize:13, color:C.dim, fontWeight:600, marginBottom:8 }}>
                 🇺🇸 {revealSecondary}
               </div>
             )}
-            {/* Meaning pill (shown when NOT in defMode — defMode already shows it as primary) */}
-            {!defMode && card?.meaning && (
+            {/* Meaning pill (non-immersion, non-defMode) */}
+            {!isImmersion && !defMode && card?.meaning && (
               <div style={{ background:`${tc}11`, border:`1px solid ${tc}22`, borderRadius:12, padding:'9px 14px', fontSize:13, color:`${C.silver}cc`, lineHeight:1.4, marginTop:4 }}>
                 {card.meaning}
               </div>
             )}
             {/* Example sentences */}
-            {(card?.en_ex || card?.es_ex) && (
+            {(card?.en_ex || (!isImmersion && card?.es_ex)) && (
               <div style={{ marginTop:12, borderTop:`1px solid ${C.dim}22`, paddingTop:12, textAlign:'left' }}>
                 {card.en_ex && (
                   <div style={{ fontSize:12, color:`${C.silver}88`, lineHeight:1.5, fontStyle:'italic', marginBottom:4 }}>
                     🇺🇸 "{card.en_ex}"
                   </div>
                 )}
-                {!defMode && card.es_ex && (
+                {!isImmersion && !defMode && card.es_ex && (
                   <div style={{ fontSize:11, color:`${C.dim}`, lineHeight:1.4, fontStyle:'italic' }}>
                     🇪🇸 "{card.es_ex}"
                   </div>
@@ -393,8 +545,8 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
           </div>
         )}
 
-        {/* Type mode: input field */}
-        {typeMode && !typeResult && (
+        {/* Type/Listen mode: input field */}
+        {isTypeMode && !typeResult && (
           <div style={{ marginTop:20, width:'100%' }} onClick={e => e.stopPropagation()}>
             <input
               ref={inputRef}
@@ -402,7 +554,7 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
               value={typeInput}
               onChange={e => setTypeInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && submitAnswer()}
-              placeholder="type in English…"
+              placeholder={studyMode === 'listen' ? 'type what you heard…' : 'type in English…'}
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
@@ -425,10 +577,10 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
         )}
 
         {/* Type mode: correct result */}
-        {typeMode && typeResult === 'correct' && (
+        {isTypeMode && typeResult === 'correct' && (
           <div style={{ marginTop:20, textAlign:'center', animation:'correctPop .4s ease' }}>
             <div style={{ color:C.bio, fontSize:28, fontWeight:900, marginBottom:6 }}>✓ Correct!</div>
-            <div style={{ color:`${C.silver}99`, fontSize:14 }}>{showBack}</div>
+            <div style={{ color:`${C.silver}99`, fontSize:14 }}>{card?.en}</div>
             {card?.en_ex && (
               <div style={{ fontSize:12, color:`${C.dim}`, fontStyle:'italic', marginTop:8, lineHeight:1.4 }}>
                 "{card.en_ex}"
@@ -438,10 +590,10 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
         )}
 
         {/* Type mode: wrong result */}
-        {typeMode && typeResult === 'wrong' && (
+        {isTypeMode && typeResult === 'wrong' && (
           <div style={{ marginTop:20, textAlign:'center', animation:'wrongShake .4s ease' }}>
             <div style={{ color:C.red, fontSize:15, fontWeight:800, marginBottom:8 }}>✗ The answer was:</div>
-            <div style={{ color:C.silver, fontSize:24, fontWeight:700 }}>{showBack}</div>
+            <div style={{ color:C.silver, fontSize:24, fontWeight:700 }}>{card?.en}</div>
             {card?.meaning && (
               <div style={{ color:`${C.silver}77`, fontSize:12, marginTop:6, fontStyle:'italic' }}>{card.meaning}</div>
             )}
@@ -452,95 +604,48 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
             )}
           </div>
         )}
-
-        {/* Type mode: input field */}
-        {typeMode && !typeResult && (
-          <div style={{ marginTop:20, width:'100%' }} onClick={e => e.stopPropagation()}>
-            <input
-              ref={inputRef}
-              className="quiz-type-input"
-              value={typeInput}
-              onChange={e => setTypeInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && submitAnswer()}
-              placeholder="type in English…"
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-              style={{
-                width:'100%', padding:'14px 16px', borderRadius:14, fontSize:16,
-                background:C.ghost, border:`1.5px solid ${C.dim}55`,
-                color:C.silver, fontFamily:"'Outfit',sans-serif",
-                boxSizing:'border-box', transition:'border-color .2s, box-shadow .2s',
-              }}
-            />
-            <button
-              onClick={e => { e.stopPropagation(); submitAnswer(); }}
-              style={{
-                width:'100%', marginTop:10, padding:'14px 0', borderRadius:14,
-                background:`${tc}18`, border:`1.5px solid ${tc}55`, color:tc,
-                fontSize:15, fontWeight:800, cursor:'pointer', fontFamily:"'Outfit',sans-serif",
-              }}
-            >Check →</button>
-          </div>
-        )}
-
-        {/* Type mode: correct result */}
-        {typeMode && typeResult === 'correct' && (
-          <div style={{ marginTop:20, textAlign:'center', animation:'correctPop .4s ease' }}>
-            <div style={{ color:C.bio, fontSize:28, fontWeight:900, marginBottom:6 }}>✓ Correct!</div>
-            <div style={{ color:`${C.silver}99`, fontSize:14 }}>{showBack}</div>
-          </div>
-        )}
-
-        {/* Type mode: wrong result */}
-        {typeMode && typeResult === 'wrong' && (
-          <div style={{ marginTop:20, textAlign:'center', animation:'wrongShake .4s ease' }}>
-            <div style={{ color:C.red, fontSize:15, fontWeight:800, marginBottom:8 }}>✗ The answer was:</div>
-            <div style={{ color:C.silver, fontSize:24, fontWeight:700 }}>{showBack}</div>
-            {card?.meaning && (
-              <div style={{ color:`${C.silver}77`, fontSize:12, marginTop:8, fontStyle:'italic' }}>{card.meaning}</div>
-            )}
-          </div>
-        )}
       </div>
+      )}
 
-      {/* Bottom buttons */}
-      <div style={{ padding:'12px 0 4px', flexShrink:0 }}>
-        {typeMode ? (
-          <div style={{ textAlign:'center', color:C.dim, fontSize:12, padding:'8px 0', fontFamily:"'Space Mono',monospace" }}>
-            {typeResult ? (typeResult === 'correct' ? '✓ Moving to next…' : '✗ Try again next round…') : 'Type · press Enter to check'}
-          </div>
-        ) : flipped ? (
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-            <button onClick={() => answer('again')} style={{
-              padding:'18px 0', borderRadius:16, fontSize:17, fontWeight:800, letterSpacing:0.5,
-              background:'rgba(255,0,68,0.12)', border:`1.5px solid ${C.red}66`, color:C.red,
-              cursor:'pointer', fontFamily:"'Outfit',sans-serif",
-              boxShadow:`0 4px 20px ${C.red}22`,
-            }}>✗ AGAIN</button>
-            <button onClick={() => answer('easy')} style={{
-              padding:'18px 0', borderRadius:16, fontSize:17, fontWeight:800, letterSpacing:0.5,
-              background:`${C.bio}12`, border:`1.5px solid ${C.bio}66`, color:C.bio,
-              cursor:'pointer', fontFamily:"'Outfit',sans-serif",
-              boxShadow:`0 4px 20px ${C.bio}22`,
-            }}>✓ EASY</button>
-          </div>
-        ) : (
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-            <button onClick={() => answer('again')} style={{
-              padding:'16px 0', borderRadius:16, fontSize:14, fontWeight:700,
-              background:'rgba(255,0,68,0.07)', border:`1px solid ${C.red}44`, color:`${C.red}aa`,
-              cursor:'pointer', fontFamily:"'Outfit',sans-serif",
-            }}>✗ Again (3m)</button>
-            <button onClick={handleReveal} style={{
-              padding:'16px 0', borderRadius:16, fontSize:15, fontWeight:800,
-              background:`${C.bio}12`, border:`1.5px solid ${C.bio}55`, color:C.bio,
-              cursor:'pointer', fontFamily:"'Outfit',sans-serif",
-              boxShadow:`0 4px 16px ${C.bio}22`,
-            }}>Reveal →</button>
-          </div>
-        )}
-      </div>
+      {/* Bottom buttons (not shown in match mode) */}
+      {!isMatchMode && (
+        <div style={{ padding:'12px 0 4px', flexShrink:0 }}>
+          {isTypeMode ? (
+            <div style={{ textAlign:'center', color:C.dim, fontSize:12, padding:'8px 0', fontFamily:"'Space Mono',monospace" }}>
+              {typeResult ? (typeResult === 'correct' ? '✓ Moving to next…' : '✗ Try again next round…') : 'Type · press Enter to check'}
+            </div>
+          ) : flipped || isBothMode ? (
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+              <button onClick={() => answer('again')} style={{
+                padding:'18px 0', borderRadius:16, fontSize:17, fontWeight:800, letterSpacing:0.5,
+                background:'rgba(255,0,68,0.12)', border:`1.5px solid ${C.red}66`, color:C.red,
+                cursor:'pointer', fontFamily:"'Outfit',sans-serif",
+                boxShadow:`0 4px 20px ${C.red}22`,
+              }}>✗ AGAIN</button>
+              <button onClick={() => answer('easy')} style={{
+                padding:'18px 0', borderRadius:16, fontSize:17, fontWeight:800, letterSpacing:0.5,
+                background:`${C.bio}12`, border:`1.5px solid ${C.bio}66`, color:C.bio,
+                cursor:'pointer', fontFamily:"'Outfit',sans-serif",
+                boxShadow:`0 4px 20px ${C.bio}22`,
+              }}>✓ EASY</button>
+            </div>
+          ) : (
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+              <button onClick={() => answer('again')} style={{
+                padding:'16px 0', borderRadius:16, fontSize:14, fontWeight:700,
+                background:'rgba(255,0,68,0.07)', border:`1px solid ${C.red}44`, color:`${C.red}aa`,
+                cursor:'pointer', fontFamily:"'Outfit',sans-serif",
+              }}>✗ Again (3m)</button>
+              <button onClick={handleReveal} style={{
+                padding:'16px 0', borderRadius:16, fontSize:15, fontWeight:800,
+                background:`${C.bio}12`, border:`1.5px solid ${C.bio}55`, color:C.bio,
+                cursor:'pointer', fontFamily:"'Outfit',sans-serif",
+                boxShadow:`0 4px 16px ${C.bio}22`,
+              }}>Reveal →</button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Session stats */}
       <div style={{ display:'flex', justifyContent:'center', gap:24, paddingBottom:8, paddingTop:2, flexShrink:0 }}>
