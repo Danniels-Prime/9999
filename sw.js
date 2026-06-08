@@ -1,4 +1,4 @@
-const CACHE = 'lucidland-v4';
+const CACHE = 'lucidland-v5';
 const SHELL  = '/9999/';
 
 self.addEventListener('install', e => {
