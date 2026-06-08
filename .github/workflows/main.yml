@@ -7,6 +7,12 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
 
 jobs:
   build-and-deploy:
@@ -33,16 +39,35 @@ jobs:
       - name: Inline JS into index.html (single-file deploy)
         run: python3 inline_build.py
 
-      - name: Push to Pages branch
+      - name: Copy static files into dist
+        run: |
+          cp public/sw.js dist/sw.js
+          cp public/manifest.json dist/manifest.json
+          cp public/icon-192.png dist/icon-192.png || true
+          cp public/icon-512.png dist/icon-512.png || true
+          cp public/maskable-icon-512.png dist/maskable-icon-512.png || true
+          touch dist/.nojekyll
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
+
+      - name: Also push to Pages branch (belt + suspenders)
         run: |
           cp dist/index.html /tmp/lucid_index.html
+          cp public/sw.js /tmp/lucid_sw.js
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git fetch origin claude/lucid-dreamland-spanish-learners-hSjDS
           git checkout claude/lucid-dreamland-spanish-learners-hSjDS
           cp /tmp/lucid_index.html index.html
-          git add index.html
-          git diff --staged --quiet && echo "No changes" && exit 0
+          cp /tmp/lucid_sw.js sw.js
+          git add index.html sw.js
+          git diff --staged --quiet && echo "No changes to branch" && exit 0
           git commit -m "Auto-deploy from main @ $(git rev-parse --short ORIG_HEAD 2>/dev/null || echo latest)"
           git push origin claude/lucid-dreamland-spanish-learners-hSjDS
 
