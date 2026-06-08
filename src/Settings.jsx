@@ -185,7 +185,7 @@ function ClassifiedCard({ unlocked, icon, codename, featureName, powers, progres
   );
 }
 
-export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, onToggleHideAnswer, knownCount = 0, totalCards = 896, apiKey = '', onSaveApiKey, openaiKey = '', onSaveOpenaiKey, openrouterKey = '', onSaveOpenrouterKey, deepseekKey = '', onSaveDeepseekKey, customEndpoint = '', onSaveCustomEndpoint, customKey = '', onSaveCustomKey, customModel = '', onSaveCustomModel, level = 1, levelPct = 0, username = '', onSaveUsername, studyMode = 'flip_es_en', onSaveStudyMode, onGoToPractice }) {
+export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, onToggleHideAnswer, knownCount = 0, totalCards = 896, apiKey = '', onSaveApiKey, openaiKey = '', onSaveOpenaiKey, openrouterKey = '', onSaveOpenrouterKey, deepseekKey = '', onSaveDeepseekKey, customEndpoint = '', onSaveCustomEndpoint, customKey = '', onSaveCustomKey, customModel = '', onSaveCustomModel, level = 1, levelPct = 0, username = '', onSaveUsername, studyMode = 'flip_es_en', onSaveStudyMode, defMode = false, onSaveDefMode, hz = null, hzColor = null, onGoToFreq, onGoToPractice }) {
   const [showKey,   setShowKey]   = useState(false);
   const [showKey2,  setShowKey2]  = useState(false);
   const [showKeyOR, setShowKeyOR] = useState(false);
@@ -395,6 +395,36 @@ export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, on
           label="🙈 Hide Answer"
           sub="No ghost letters in WordBlast — type from pure memory"
         />
+        <div style={{ marginTop:'10px' }}>
+          <Toggle
+            on={defMode}
+            onToggle={() => onSaveDefMode?.(!defMode)}
+            label="📖 Definition Mode"
+            sub="Show English explanation instead of Spanish translation on card flip"
+          />
+        </div>
+      </div>
+
+      {/* ── SOLFEGGIO FREQUENCIES ── */}
+      <div style={{ marginBottom: '28px' }}>
+        <SectionLabel icon="〰" label="SOLFEGGIO FREQUENCIES" color="#8800ff" />
+        <div style={{ background:'rgba(255,255,255,0.03)', border:`1px solid ${hz ? '#8800ff44' : '#1e1c3a'}`, borderRadius:'16px', padding:'14px 16px' }}>
+          {hz ? (
+            <p style={{ fontSize:'13px', color:'#c8c6e8', marginBottom:'10px', fontWeight:700 }}>
+              Active: <span style={{ color: hzColor || '#8800ff', fontWeight:900 }}>{hz} Hz</span> — tap to change or stop
+            </p>
+          ) : (
+            <p style={{ fontSize:'12px', color:'#5e5c88', marginBottom:'10px', lineHeight:1.5 }}>
+              Binaural beats · 9 Solfeggio tones · shifts the whole app color
+            </p>
+          )}
+          <button onClick={onGoToFreq} style={{
+            width:'100%', padding:'12px 0', borderRadius:'12px',
+            border:'1px solid rgba(136,0,255,0.4)', background:'rgba(136,0,255,0.1)',
+            color:'#c77dff', fontSize:'14px', fontWeight:900,
+            cursor:'pointer', fontFamily:'inherit', letterSpacing:'0.3px',
+          }}>〰 Open Frequency Player</button>
+        </div>
       </div>
 
       {/* ── FLASHCARD MODE ── */}

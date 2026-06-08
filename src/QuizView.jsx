@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { PHRASES, SLANG } from './langData';
+import { PHRASES, SLANG, CATEGORY_THEMES } from './langData';
 
 const C = {
   void:'#03010a', card:'#0e0c1a', glass:'#14102a',
@@ -13,10 +13,51 @@ const ALL_VOCAB = [
   ...Object.values(SLANG).flat(),
 ];
 
-function getDueQueue(srs) {
+/* ── Category list for filter picker ── */
+const ALL_CATS = [
+  { key:'__all__', label:'All Due', icon:'📋', items: null },
+  ...Object.entries(PHRASES).map(([k, items]) => ({
+    key: k,
+    label: CATEGORY_THEMES[k]?.label || k,
+    icon: CATEGORY_THEMES[k]?.icon || '📚',
+    items,
+  })),
+  ...Object.entries(SLANG).map(([k, items]) => ({
+    key: k,
+    label: CATEGORY_THEMES[k]?.label || k,
+    icon: CATEGORY_THEMES[k]?.icon || '💬',
+    items,
+  })),
+];
+
+/* ── Emoji map for concrete nouns ── */
+const WORD_EMOJI = {
+  'water':'💧','coffee':'☕','milk':'🥛','juice':'🧃',
+  'bread':'🍞','meat':'🥩','chicken':'🍗','fish':'🐟',
+  'vegetables':'🥦','vegetable':'🥦','beer':'🍺','wine':'🍷',
+  'tea':'🍵','apple':'🍎','egg':'🥚','eggs':'🥚',
+  'rice':'🍚','pasta':'🍝','pizza':'🍕','burger':'🍔',
+  'salad':'🥗','soup':'🍲','ice cream':'🍦','cake':'🎂',
+  'cookie':'🍪','phone':'📱','book':'📚','car':'🚗',
+  'house':'🏠','dog':'🐕','cat':'🐈','sun':'☀️',
+  'moon':'🌙','star':'⭐','money':'💰','music':'🎵',
+  'computer':'💻','shirt':'👕','shoes':'👟','hat':'🎩',
+  'bus':'🚌','train':'🚂','plane':'✈️','boat':'⛵',
+  'clock':'⏰','key':'🔑','door':'🚪','window':'🪟',
+  'tree':'🌳','flower':'🌸','rain':'🌧️','snow':'❄️',
+};
+
+function getWordEmoji(en) {
+  if (!en) return null;
+  const lower = en.toLowerCase().trim();
+  return WORD_EMOJI[lower] || null;
+}
+
+function getDueQueue(srs, catItems = null) {
+  const pool = catItems ?? ALL_VOCAB;
   const now = Date.now();
-  const due = ALL_VOCAB.filter(v => { const s = srs[v.id]; return !s || now >= s.nextReview; });
-  return due.length > 0 ? due.slice(0, 20) : ALL_VOCAB.slice(0, 20);
+  const due = pool.filter(v => { const s = srs[v.id]; return !s || now >= s.nextReview; });
+  return due.length > 0 ? due.slice(0, 20) : pool.slice(0, 20);
 }
 
 function fuzzyMatch(input, answer) {
@@ -54,22 +95,24 @@ function CompletionScreen({ easy, again, onRestart }) {
   );
 }
 
-export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77dff', godMode, studyMode = 'flip_es_en', voices = [] }) {
-  const [queue, setQueue]         = useState(() => getDueQueue(srs));
-  const [idx, setIdx]             = useState(0);
-  const [flipped, setFlipped]     = useState(false);
-  const [sessionEasy, setEasy]    = useState(0);
-  const [sessionAgain, setAgain]  = useState(0);
-  const [anim, setAnim]           = useState('');
-  const [typeMode, setTypeMode]   = useState(() => {
+export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77dff', godMode, studyMode = 'flip_es_en', voices = [], defMode = false }) {
+  const [selectedCat, setSelectedCat] = useState('__all__');
+  const [queue, setQueue]             = useState(() => getDueQueue(srs));
+  const [idx, setIdx]                 = useState(0);
+  const [flipped, setFlipped]         = useState(false);
+  const [sessionEasy, setEasy]        = useState(0);
+  const [sessionAgain, setAgain]      = useState(0);
+  const [anim, setAnim]               = useState('');
+  const [typeMode, setTypeMode]       = useState(() => {
     try { return JSON.parse(localStorage.getItem('lucid_quiz_typemode') ?? 'false'); } catch { return false; }
   });
-  const [typeInput, setTypeInput] = useState('');
-  const [typeResult, setTypeResult] = useState(null); // null | 'correct' | 'wrong'
-  const cardRef = useRef(null);
-  const inputRef = useRef(null);
+  const [typeInput, setTypeInput]     = useState('');
+  const [typeResult, setTypeResult]   = useState(null); // null | 'correct' | 'wrong'
+  const cardRef   = useRef(null);
+  const inputRef  = useRef(null);
+  const catRowRef = useRef(null);
 
-  const card = queue[idx];
+  const card   = queue[idx];
   const isDone = !card && (sessionEasy + sessionAgain > 0);
 
   const toggleTypeMode = () => setTypeMode(m => {
@@ -78,13 +121,22 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
     return next;
   });
 
-  // refresh when srs changes and we've run out of cards mid-session
+  // refresh when srs changes and queue is empty at session start
   useEffect(() => {
     if (!card && sessionEasy + sessionAgain === 0) {
-      setQueue(getDueQueue(srs));
+      const cat = ALL_CATS.find(c => c.key === selectedCat);
+      setQueue(getDueQueue(srs, cat?.items ?? null));
       setIdx(0);
     }
-  }, [srs, card, sessionEasy, sessionAgain]);
+  }, [srs, card, sessionEasy, sessionAgain, selectedCat]);
+
+  // reset type input on card change
+  useEffect(() => { setTypeInput(''); setTypeResult(null); }, [idx]);
+
+  // auto-focus input in type mode
+  useEffect(() => {
+    if (typeMode && inputRef.current) inputRef.current.focus();
+  }, [idx, typeMode]);
 
   // reset type input on card change
   useEffect(() => { setTypeInput(''); setTypeResult(null); }, [idx]);
@@ -97,6 +149,10 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
   const showFront = studyMode === 'flip_en_es' ? card?.en : card?.es;
   const showBack  = studyMode === 'flip_en_es' ? card?.es : card?.en;
 
+  // In definition mode, display the meaning as the primary reveal (type mode still matches against showBack)
+  const revealPrimary   = (defMode && card?.meaning) ? card.meaning : showBack;
+  const revealSecondary = (defMode && card?.meaning) ? showBack : null;
+
   const speak = useCallback((text) => {
     window.speechSynthesis.cancel();
     const utt = new SpeechSynthesisUtterance(text);
@@ -105,6 +161,14 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
     if (pref) utt.voice = pref;
     window.speechSynthesis.speak(utt);
   }, [voices]);
+
+  // Auto-play English audio on each new card (skip in type mode — would reveal answer)
+  useEffect(() => {
+    if (card && !typeMode) {
+      const timer = setTimeout(() => speak(card.en), 350);
+      return () => clearTimeout(timer);
+    }
+  }, [idx]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const answer = useCallback((type) => {
     if (!card) return;
@@ -142,8 +206,21 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
     }
   };
 
+  const handleCatChange = (catKey) => {
+    const cat = ALL_CATS.find(c => c.key === catKey);
+    setSelectedCat(catKey);
+    setQueue(getDueQueue(srs, cat?.items ?? null));
+    setIdx(0);
+    setEasy(0);
+    setAgain(0);
+    setFlipped(false);
+    setTypeInput('');
+    setTypeResult(null);
+  };
+
   const restart = () => {
-    setQueue(getDueQueue(srs));
+    const cat = ALL_CATS.find(c => c.key === selectedCat);
+    setQueue(getDueQueue(srs, cat?.items ?? null));
     setIdx(0);
     setEasy(0);
     setAgain(0);
@@ -156,22 +233,23 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
     return <CompletionScreen easy={sessionEasy} again={sessionAgain} onRestart={restart} />;
   }
 
-  const total = queue.length;
+  const total    = queue.length;
   const progress = total > 0 ? Math.round((idx / total) * 100) : 0;
-  const tc = godMode ? C.gold : themeColor;
+  const tc       = godMode ? C.gold : themeColor;
+  const emoji    = getWordEmoji(card?.en);
 
   const catLabel = (() => {
     for (const [cat, items] of Object.entries(PHRASES)) {
-      if (items.some(i => i.id === card.id)) return cat;
+      if (items.some(i => i.id === card.id)) return CATEGORY_THEMES[cat]?.label || cat;
     }
     for (const [cat, items] of Object.entries(SLANG)) {
-      if (items.some(i => i.id === card.id)) return cat;
+      if (items.some(i => i.id === card.id)) return CATEGORY_THEMES[cat]?.label || cat;
     }
     return '';
   })();
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', height:'100%', padding:'12px 14px 4px' }}>
+    <div style={{ display:'flex', flexDirection:'column', height:'100%', padding:'8px 14px 4px' }}>
       <style>{`
         @keyframes easyFloat{0%{transform:translateY(0) scale(1)}40%{transform:translateY(-10px) scale(1.03);filter:brightness(1.5)}100%{transform:translateY(0) scale(1)}}
         @keyframes shakeCard{0%,100%{transform:translateX(0)}20%{transform:translateX(-10px)}40%{transform:translateX(10px)}60%{transform:translateX(-7px)}80%{transform:translateX(7px)}}
@@ -179,10 +257,36 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
         @keyframes correctPop{0%{transform:scale(0.85);opacity:0}60%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
         @keyframes wrongShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
         .quiz-type-input:focus{border-color:${tc} !important;box-shadow:0 0 0 2px ${tc}33 !important;outline:none}
+        .cat-row::-webkit-scrollbar{display:none}
       `}</style>
 
+      {/* Category filter row */}
+      <div ref={catRowRef} className="cat-row" style={{
+        display:'flex', overflowX:'auto', gap:6, paddingBottom:8, marginBottom:4,
+        scrollbarWidth:'none', WebkitOverflowScrolling:'touch', flexShrink:0,
+      }}>
+        {ALL_CATS.map(cat => {
+          const active = selectedCat === cat.key;
+          const dueInCat = cat.items
+            ? getDueQueue(srs, cat.items).length
+            : getDueQueue(srs).length;
+          return (
+            <button key={cat.key} onClick={() => handleCatChange(cat.key)} style={{
+              flexShrink:0, padding:'4px 10px', borderRadius:20, fontSize:10, fontWeight:700,
+              background: active ? `${tc}22` : 'rgba(255,255,255,0.04)',
+              border:`1px solid ${active ? tc : C.dim}55`,
+              color: active ? tc : C.dim,
+              cursor:'pointer', fontFamily:"'Space Mono',monospace", whiteSpace:'nowrap',
+              transition:'all .15s',
+            }}>
+              {cat.key === '__all__' ? `All Due (${dueInCat})` : `${cat.icon} ${cat.label}`}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Progress bar + type mode toggle */}
-      <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:14 }}>
+      <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12, flexShrink:0 }}>
         <div style={{ flex:1, height:4, background:C.ghost, borderRadius:2, overflow:'hidden' }}>
           <div style={{ height:'100%', width:`${progress}%`, background:`linear-gradient(90deg,${tc},${C.cyan})`, transition:'width .4s ease', borderRadius:2 }}/>
         </div>
@@ -206,23 +310,30 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
         ref={cardRef}
         onClick={!typeMode ? handleReveal : undefined}
         style={{
-          flex:1,
+          flex:1, overflowY:'auto',
           background:`linear-gradient(145deg,${C.card},${C.glass})`,
           border:`1.5px solid ${tc}${flipped || typeResult ? 'aa' : '33'}`,
-          borderRadius:24, padding:'28px 24px',
+          borderRadius:24, padding:'24px 20px',
           display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
           cursor: (!typeMode && !flipped) ? 'pointer' : 'default',
           userSelect:'none',
           boxShadow: (flipped || typeResult) ? `0 0 28px ${tc}33,inset 0 0 40px ${tc}11` : `0 0 16px ${tc}18`,
           transition:'border-color .3s, box-shadow .3s',
           animation: anim === 'easy' ? 'easyFloat .55s ease-out' : anim === 'again' ? 'shakeCard .5s ease-out' : 'none',
-          minHeight:260,
+          minHeight:200,
         }}
       >
-        {/* Category */}
-        <div style={{ fontSize:11, color:C.dim, letterSpacing:3, marginBottom:16, fontFamily:"'Space Mono',monospace", textTransform:'uppercase' }}>
+        {/* Category label */}
+        <div style={{ fontSize:10, color:C.dim, letterSpacing:3, marginBottom:12, fontFamily:"'Space Mono',monospace", textTransform:'uppercase' }}>
           {catLabel}
         </div>
+
+        {/* Word emoji (for concrete nouns) */}
+        {emoji && (
+          <div style={{ fontSize:48, marginBottom:8, lineHeight:1, filter:`drop-shadow(0 0 10px ${tc}44)` }}>
+            {emoji}
+          </div>
+        )}
 
         {/* Front word */}
         <div style={{
@@ -235,20 +346,108 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
 
         {/* Reveal mode: TAP TO REVEAL hint */}
         {!typeMode && !flipped && (
-          <div style={{ marginTop:24, color:C.dim, fontSize:12, letterSpacing:2, fontFamily:"'Space Mono',monospace" }}>
+          <div style={{ marginTop:20, color:C.dim, fontSize:12, letterSpacing:2, fontFamily:"'Space Mono',monospace" }}>
             TAP TO REVEAL
           </div>
         )}
 
         {/* Reveal mode: flipped content */}
         {!typeMode && flipped && (
-          <div style={{ marginTop:24, width:'100%', borderTop:`1px solid ${C.dim}33`, paddingTop:20, textAlign:'center', animation:'revealIn .3s ease' }}>
-            <div style={{ fontSize:22, color:C.silver, fontWeight:700, marginBottom: card?.meaning ? 10 : 0 }}>
-              {showBack}
+          <div style={{ marginTop:20, width:'100%', borderTop:`1px solid ${C.dim}33`, paddingTop:18, textAlign:'center', animation:'revealIn .3s ease' }}>
+            {/* Primary reveal (meaning in defMode, English word otherwise) */}
+            <div style={{
+              fontSize: defMode ? 16 : 22,
+              color: defMode ? `${C.silver}cc` : C.silver,
+              fontWeight: defMode ? 600 : 700,
+              marginBottom:8, lineHeight:1.4,
+            }}>
+              {revealPrimary}
             </div>
-            {card?.meaning && (
-              <div style={{ background:`${tc}11`, border:`1px solid ${tc}22`, borderRadius:12, padding:'9px 14px', fontSize:13, color:`${C.silver}cc`, lineHeight:1.4, marginTop:8 }}>
+            {/* Secondary: English word when in defMode */}
+            {revealSecondary && (
+              <div style={{ fontSize:13, color:C.dim, fontWeight:600, marginBottom:8 }}>
+                🇺🇸 {revealSecondary}
+              </div>
+            )}
+            {/* Meaning pill (shown when NOT in defMode — defMode already shows it as primary) */}
+            {!defMode && card?.meaning && (
+              <div style={{ background:`${tc}11`, border:`1px solid ${tc}22`, borderRadius:12, padding:'9px 14px', fontSize:13, color:`${C.silver}cc`, lineHeight:1.4, marginTop:4 }}>
                 {card.meaning}
+              </div>
+            )}
+            {/* Example sentences */}
+            {(card?.en_ex || card?.es_ex) && (
+              <div style={{ marginTop:12, borderTop:`1px solid ${C.dim}22`, paddingTop:12, textAlign:'left' }}>
+                {card.en_ex && (
+                  <div style={{ fontSize:12, color:`${C.silver}88`, lineHeight:1.5, fontStyle:'italic', marginBottom:4 }}>
+                    🇺🇸 "{card.en_ex}"
+                  </div>
+                )}
+                {!defMode && card.es_ex && (
+                  <div style={{ fontSize:11, color:`${C.dim}`, lineHeight:1.4, fontStyle:'italic' }}>
+                    🇪🇸 "{card.es_ex}"
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Type mode: input field */}
+        {typeMode && !typeResult && (
+          <div style={{ marginTop:20, width:'100%' }} onClick={e => e.stopPropagation()}>
+            <input
+              ref={inputRef}
+              className="quiz-type-input"
+              value={typeInput}
+              onChange={e => setTypeInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && submitAnswer()}
+              placeholder="type in English…"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              style={{
+                width:'100%', padding:'14px 16px', borderRadius:14, fontSize:16,
+                background:C.ghost, border:`1.5px solid ${C.dim}55`,
+                color:C.silver, fontFamily:"'Outfit',sans-serif",
+                boxSizing:'border-box', transition:'border-color .2s, box-shadow .2s',
+              }}
+            />
+            <button
+              onClick={e => { e.stopPropagation(); submitAnswer(); }}
+              style={{
+                width:'100%', marginTop:10, padding:'14px 0', borderRadius:14,
+                background:`${tc}18`, border:`1.5px solid ${tc}55`, color:tc,
+                fontSize:15, fontWeight:800, cursor:'pointer', fontFamily:"'Outfit',sans-serif",
+              }}
+            >Check →</button>
+          </div>
+        )}
+
+        {/* Type mode: correct result */}
+        {typeMode && typeResult === 'correct' && (
+          <div style={{ marginTop:20, textAlign:'center', animation:'correctPop .4s ease' }}>
+            <div style={{ color:C.bio, fontSize:28, fontWeight:900, marginBottom:6 }}>✓ Correct!</div>
+            <div style={{ color:`${C.silver}99`, fontSize:14 }}>{showBack}</div>
+            {card?.en_ex && (
+              <div style={{ fontSize:12, color:`${C.dim}`, fontStyle:'italic', marginTop:8, lineHeight:1.4 }}>
+                "{card.en_ex}"
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Type mode: wrong result */}
+        {typeMode && typeResult === 'wrong' && (
+          <div style={{ marginTop:20, textAlign:'center', animation:'wrongShake .4s ease' }}>
+            <div style={{ color:C.red, fontSize:15, fontWeight:800, marginBottom:8 }}>✗ The answer was:</div>
+            <div style={{ color:C.silver, fontSize:24, fontWeight:700 }}>{showBack}</div>
+            {card?.meaning && (
+              <div style={{ color:`${C.silver}77`, fontSize:12, marginTop:6, fontStyle:'italic' }}>{card.meaning}</div>
+            )}
+            {card?.en_ex && (
+              <div style={{ fontSize:11, color:`${C.dim}`, fontStyle:'italic', marginTop:6, lineHeight:1.4 }}>
+                "{card.en_ex}"
               </div>
             )}
           </div>
@@ -306,7 +505,7 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
       </div>
 
       {/* Bottom buttons */}
-      <div style={{ padding:'14px 0 4px' }}>
+      <div style={{ padding:'12px 0 4px', flexShrink:0 }}>
         {typeMode ? (
           <div style={{ textAlign:'center', color:C.dim, fontSize:12, padding:'8px 0', fontFamily:"'Space Mono',monospace" }}>
             {typeResult ? (typeResult === 'correct' ? '✓ Moving to next…' : '✗ Try again next round…') : 'Type · press Enter to check'}
@@ -344,7 +543,7 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
       </div>
 
       {/* Session stats */}
-      <div style={{ display:'flex', justifyContent:'center', gap:24, paddingBottom:10, paddingTop:4 }}>
+      <div style={{ display:'flex', justifyContent:'center', gap:24, paddingBottom:8, paddingTop:2, flexShrink:0 }}>
         <span style={{ color:C.bio, fontSize:12, fontFamily:"'Space Mono',monospace" }}>✓ Easy: {sessionEasy}</span>
         <span style={{ color:C.red, fontSize:12, fontFamily:"'Space Mono',monospace" }}>✗ Again: {sessionAgain}</span>
         <span style={{ color:C.dim, fontSize:12, fontFamily:"'Space Mono',monospace" }}>+2 XP next</span>
