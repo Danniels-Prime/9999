@@ -53,15 +53,16 @@ export default function LangCard({ item, theme, isFlipped, onFlip, index, godMod
   const isKnown  = rateStatus === 'yes';
   const isMissed = rateStatus === 'no';
 
-  const isReversed = studyMode === 'flip_en_es' ||
-    (studyMode === 'flip_random' && item.id.charCodeAt(item.id.length - 1) % 2 === 1);
+  const isImmersion = studyMode === 'flip_def';
+  const isReversed  = !isImmersion && (studyMode === 'flip_en_es' ||
+    (studyMode === 'flip_random' && item.id.charCodeAt(item.id.length - 1) % 2 === 1));
 
-  const frontText  = isReversed ? item.en : item.es;
-  const frontLang  = isReversed ? '🇺🇸 EN' : '🇪🇸 ES';
-  const frontColor = isReversed ? cc : '#FFD700';
-  const frontSize  = isReversed ? fs_en : fs_es;
+  const frontText  = isImmersion ? item.en : (isReversed ? item.en : item.es);
+  const frontLang  = isImmersion ? '🇺🇸 EN' : (isReversed ? '🇺🇸 EN' : '🇪🇸 ES');
+  const frontColor = isImmersion ? cc : (isReversed ? cc : '#FFD700');
+  const frontSize  = isImmersion ? fs_en : (isReversed ? fs_en : fs_es);
   const backText   = isReversed ? item.es : item.en;
-  const backLang   = isReversed ? '🇪🇸 ES' : '🇺🇸 EN';
+  const backLang   = isImmersion ? '📖 MEANING' : (isReversed ? '🇪🇸 ES' : '🇺🇸 EN');
   const backColor  = isReversed ? '#FFD700' : cc;
   const backSize   = isReversed ? fs_es : fs_en;
   const backGlow   = isReversed ? '0 0 14px #FFD70080' : `0 0 20px ${cc}, 0 0 40px ${cc}60`;
@@ -201,10 +202,12 @@ export default function LangCard({ item, theme, isFlipped, onFlip, index, godMod
   const isSpeedMode = studyMode === 'speed';
   const emoji = getWordEmoji(item.en);
 
-  // In defMode, show the meaning as the primary back content (English definition)
-  const backPrimary   = (defMode && !isReversed && item.meaning) ? item.meaning : backText;
-  const backPrimaryFs = (defMode && !isReversed && item.meaning)
-    ? (item.meaning.length > 40 ? '11px' : item.meaning.length > 24 ? '13px' : '15px')
+  // Immersion mode: EN front + meaning back. defMode: same but as toggle.
+  const immersionBack = item.meaning || item.en;
+  const backPrimary   = isImmersion ? immersionBack
+    : (defMode && !isReversed && item.meaning) ? item.meaning : backText;
+  const backPrimaryFs = (isImmersion || (defMode && !isReversed && item.meaning))
+    ? (backPrimary.length > 40 ? '11px' : backPrimary.length > 24 ? '13px' : '15px')
     : backSize;
 
   return (
@@ -239,15 +242,15 @@ export default function LangCard({ item, theme, isFlipped, onFlip, index, godMod
           <div style={{ fontSize:backPrimaryFs, fontWeight:900, color:backColor, lineHeight:1.25, textShadow:backGlow, letterSpacing:'-0.3px', padding:'4px 0 2px' }}>
             {backPrimary}
           </div>
-          {/* In defMode: show the English word smaller below the definition */}
-          {defMode && !isReversed && item.meaning && (
-            <div style={{ fontSize:'11px', color:`${cc}99`, fontWeight:700, lineHeight:1.2 }}>{backText}</div>
+          {/* defMode only (not immersion): show EN word smaller below the definition */}
+          {defMode && !isImmersion && !isReversed && item.meaning && (
+            <div style={{ fontSize:'11px', color:`${cc}99`, fontWeight:700, lineHeight:1.2 }}>{item.en}</div>
           )}
-          {/* Meaning (shown when NOT in defMode) */}
-          {!defMode && item.meaning && !isReversed && (
+          {/* Meaning (shown when NOT in defMode or immersion) */}
+          {!isImmersion && !defMode && item.meaning && !isReversed && (
             <div style={{ fontSize:'10px', color:cc, fontWeight:700, lineHeight:1.3, opacity:0.8 }}>{item.meaning}</div>
           )}
-          {/* English example sentence */}
+          {/* English example sentence (always shown; immersion hides nothing — no Spanish anyway) */}
           {item.en_ex && !isReversed && (
             <div style={{ fontSize:'9px', color:'#6b69a0', lineHeight:1.4, fontStyle:'italic', borderLeft:`2px solid ${cc}40`, paddingLeft:'6px', marginTop:'1px' }}>
               "{item.en_ex}"

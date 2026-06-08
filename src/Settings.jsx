@@ -13,6 +13,7 @@ const STUDY_MODES = [
   { id:'weak',        icon:'📊',  label:'Weak Spots',  desc:'Only cards you missed ❌' },
   { id:'speed',       icon:'⚡',  label:'Speed Drill', desc:'30 second countdown timer' },
   { id:'match',       icon:'🃏',  label:'Pair Match',  desc:'Match Spanish to English tiles' },
+  { id:'flip_def',    icon:'🧠',  label:'Immersion',   desc:'See English phrase, reveal its meaning — no translation' },
 ];
 
 function fmt(n) {
