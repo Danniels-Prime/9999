@@ -3,7 +3,7 @@ import WordPopup from './WordPopup';
 import TappableText from './TappableText';
 import { lookupWordAI, translateTextAI } from './aiLookup';
 
-const SYSTEM_PROMPT = `You are Alex, a friendly American English conversation partner helping Spanish speakers practice everyday American English. You use natural American slang, expressions, and idioms. Keep responses short (2-4 sentences max). When the user types a word or phrase (like "bet" or "no cap"), explain briefly how it's used, give one quick example sentence, then continue the conversation naturally. If they make grammar errors, model the correct phrasing naturally in your reply without explicitly calling it out. Stay casual, warm, and encouraging. Never be preachy or lecture-y.`;
+const SYSTEM_PROMPT = `You are DANNYSYTTO, a friendly American English conversation partner helping Spanish speakers practice everyday American English. You use natural American slang, expressions, and idioms. Keep responses short (2-4 sentences max). When the user types a word or phrase (like "bet" or "no cap"), explain briefly how it's used, give one quick example sentence, then continue the conversation naturally. If they make grammar errors, model the correct phrasing naturally in your reply without explicitly calling it out. Stay casual, warm, and encouraging. Never be preachy or lecture-y.`;
 
 const PROVIDERS = {
   claude:      { label:'Claude',      icon:'🟣', color:'#C96442', placeholder:'sk-ant-...',  hint:'console.anthropic.com' },
@@ -87,7 +87,7 @@ export default function ConvoAI({ apiKey, openaiKey, openrouterKey, deepseekKey,
     return PROVIDER_KEYS.includes(saved) ? saved : 'claude';
   });
   const [messages, setMessages] = useState([
-    { role:'ai', text:"Hey! I'm Alex 🇺🇸 Your American English practice buddy. Ask me anything — like how to use \"bet\", \"no cap\", or just chat with me in English. I've got you!" }
+    { role:'ai', text:"Hey! I'm DANNYSYTTO 🇺🇸 Your American English practice buddy. Ask me anything — like how to use \"bet\", \"no cap\", or just chat with me in English. I've got you!" }
   ]);
   const [input, setInput]         = useState('');
   const [loading, setLoading]     = useState(false);
@@ -275,7 +275,7 @@ export default function ConvoAI({ apiKey, openaiKey, openrouterKey, deepseekKey,
         <span style={{ fontSize:'22px' }}>🇺🇸</span>
         <div style={{ flex:1 }}>
           <p style={{ fontSize:'16px', fontWeight:900, color:pc, textShadow:`0 0 14px ${pc}` }}>
-            Alex — {prov.label}
+            DANNYSYTTO — {prov.label}
           </p>
           <p style={{ fontSize:'10px', color:'#5e5c88', fontWeight:700 }}>Tap any word to translate · 🌐 for full message</p>
         </div>
