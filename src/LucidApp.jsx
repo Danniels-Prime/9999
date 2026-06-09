@@ -313,6 +313,7 @@ export default function LucidApp() {
   const studyStreakRef = useRef(0);
   const [studyMode, _setStudyMode]    = useState(() => LS.get('lucid_study_mode', 'flip_es_en'));
   const [defMode,   _setDefMode]      = useState(() => LS.get('lucid_def_mode', false));
+  const [autoRead,  _setAutoRead]     = useState(() => LS.get('lucid_autoread', true));
 
   const saveApiKey         = useCallback((k) => { setApiKey(k);     LS.set('lucid_api_key',      k); }, []);
   const saveOpenaiKey      = useCallback((k) => { _setOAI(k);       LS.set('lucid_openai_key',   k); }, []);
@@ -324,6 +325,7 @@ export default function LucidApp() {
   const saveUsername       = useCallback((n) => { _setUser(n);      LS.set('lucid_username',     n); }, []);
   const saveStudyMode      = useCallback((m) => { _setStudyMode(m); LS.set('lucid_study_mode',   m); }, []);
   const saveDefMode        = useCallback((v) => { _setDefMode(v);   LS.set('lucid_def_mode',     v); }, []);
+  const saveAutoRead       = useCallback((v) => { _setAutoRead(v);  LS.set('lucid_autoread',     v); }, []);
   const saveSrs            = useCallback((s) => { setSrsRaw(s);     LS.set('lucid_srs',          s); }, []);
   const saveVoiceRecs      = useCallback((r) => { setVoiceRecsRaw(r); LS.set('lucid_voice_recs', r); }, []);
 
@@ -421,6 +423,7 @@ export default function LucidApp() {
               studyMode={studyMode}
               onStudyModeChange={saveStudyMode}
               defMode={defMode}
+              autoRead={autoRead}
             />
           )}
           {view === 'quiz' && (
@@ -433,6 +436,7 @@ export default function LucidApp() {
               studyMode={studyMode}
               voices={voices}
               defMode={defMode}
+              autoRead={autoRead}
             />
           )}
           {view === 'blast' && (
@@ -485,6 +489,8 @@ export default function LucidApp() {
               onSaveStudyMode={saveStudyMode}
               defMode={defMode}
               onSaveDefMode={saveDefMode}
+              autoRead={autoRead}
+              onSaveAutoRead={saveAutoRead}
               hz={hz}
               hzColor={hzColor}
               onGoToFreq={() => setView('freq')}

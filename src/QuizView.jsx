@@ -198,7 +198,7 @@ function PairMatch({ items, onRate, tc }) {
   );
 }
 
-export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77dff', godMode, studyMode = 'flip_es_en', voices = [], defMode = false }) {
+export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77dff', godMode, studyMode = 'flip_es_en', voices = [], defMode = false, autoRead = true }) {
   const [selectedCat, setSelectedCat] = useState('__all__');
   const [queue, setQueue]             = useState(() => getDueQueue(srs, null, studyMode === 'weak'));
   const [idx, setIdx]                 = useState(0);
@@ -280,6 +280,17 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
       return () => clearTimeout(t);
     }
   }, [idx]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* ── Auto-speak example sentence on card reveal ── */
+  useEffect(() => {
+    if (!flipped || !autoRead || !card?.en_ex || isTypeMode) return;
+    const utt = new SpeechSynthesisUtterance(card.en_ex);
+    utt.lang = 'en-US'; utt.rate = 0.82; utt.pitch = 1.05;
+    const pref = voices.find(v => v.lang === 'en-US') || voices.find(v => v.lang.startsWith('en'));
+    if (pref) utt.voice = pref;
+    window.speechSynthesis.speak(utt);
+    return () => window.speechSynthesis.cancel();
+  }, [flipped]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── Speed mode: 30-second countdown ── */
   useEffect(() => {
