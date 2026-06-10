@@ -254,6 +254,16 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
     window.speechSynthesis.speak(utt);
   }, [voices]);
 
+  const speakES = useCallback((text) => {
+    if (!text) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'es-MX'; u.rate = 0.9;
+    const pref = voices.find(v => v.lang === 'es-MX') || voices.find(v => v.lang === 'es-ES') || voices.find(v => v.lang.startsWith('es'));
+    if (pref) u.voice = pref;
+    window.speechSynthesis.speak(u);
+  }, [voices]);
+
   const provider = (() => {
     const saved = localStorage.getItem(LS_PROVIDER);
     return PROVIDERS.includes(saved) ? saved : 'claude';
@@ -261,6 +271,7 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
   const aiCfg = { provider, claudeKey: apiKey, openaiKey, openrouterKey, deepseekKey, customEndpoint, customKey, customModel };
 
   const handleWordTap = useCallback(async (word, sentence) => {
+    if (!apiKey && !openaiKey && !openrouterKey && !deepseekKey && !customKey) return;
     const key = word.toLowerCase();
     if (wordCacheRef.current[key]) {
       setPopup({ word, data: wordCacheRef.current[key], loading: false, error: null });
@@ -305,7 +316,7 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
       const t = setTimeout(() => speak(card.en), 400);
       return () => clearTimeout(t);
     }
-    if (!isTypeMode) {
+    if (isBothMode) {
       const t = setTimeout(() => speak(card.en), 350);
       return () => clearTimeout(t);
     }
@@ -522,6 +533,19 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
           <TappableText text={showFront || ''} onWordTap={handleWordTap} accentColor={tc} />
         </div>
 
+        {/* Spanish audio button — shown when ES is the front face */}
+        {!isReversedDir && !isImmersion && !isTypeMode && (
+          <button
+            onClick={e => { e.stopPropagation(); speakES(card?.es); }}
+            style={{
+              marginTop:10, padding:'6px 16px', borderRadius:12, fontSize:13,
+              background:'rgba(255,215,0,0.08)', border:'1px solid rgba(255,215,0,0.25)',
+              cursor:'pointer', color:'rgba(255,215,0,0.7)', fontFamily:"'Outfit',sans-serif",
+              fontWeight:700, transition:'all .15s',
+            }}
+          >🇪🇸 Escuchar</button>
+        )}
+
         {/* listen mode: tap to hear button */}
         {studyMode === 'listen' && !typeResult && (
           <button
@@ -543,37 +567,40 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
 
         {/* Reveal mode OR both mode: flipped content */}
         {!isTypeMode && flipped && (
-          <div style={{ marginTop:20, width:'100%', borderTop:`1px solid ${C.dim}33`, paddingTop:18, textAlign:'center', animation: isBothMode ? 'none' : 'revealIn .3s ease' }}>
-            <div style={{ fontSize:11, color:tc, fontWeight:800, letterSpacing:1, marginBottom:8 }}>
+          <div style={{ marginTop:24, width:'100%', borderTop:`1px solid ${C.dim}44`, paddingTop:22, textAlign:'center', animation: isBothMode ? 'none' : 'revealIn .3s ease' }}>
+            {/* Back lang label — purple */}
+            <div style={{ fontSize:11, color:'#c77dff', fontWeight:800, letterSpacing:2, marginBottom:12, textShadow:'0 0 12px #c77dff90' }}>
               {backLangLabel}
             </div>
-            {/* Primary reveal */}
+            {/* Primary reveal — red glow */}
             <div style={{
-              fontSize: (isImmersion || defMode) ? 20 : 26,
-              color: C.silver,
-              fontWeight: 700,
-              marginBottom:10, lineHeight:1.4,
+              fontSize: (isImmersion || defMode) ? 28 : 34,
+              color: '#FF4757',
+              fontWeight: 900,
+              marginBottom:16, lineHeight:1.3,
+              textShadow: '0 0 20px #FF475780, 0 0 40px #FF475740',
+              letterSpacing: '-0.5px',
             }}>
-              <TappableText text={isImmersion ? (showBack || '') : (revealPrimary || '')} onWordTap={handleWordTap} accentColor={tc} />
+              <TappableText text={isImmersion ? (showBack || '') : (revealPrimary || '')} onWordTap={handleWordTap} accentColor='#FF4757' />
             </div>
-            {/* In defMode (non-immersion): show EN word below meaning */}
+            {/* In defMode: show EN word below meaning — silver */}
             {!isImmersion && revealSecondary && (
-              <div style={{ fontSize:15, color:`${C.silver}99`, fontWeight:600, marginBottom:10 }}>
-                🇺🇸 <TappableText text={revealSecondary} onWordTap={handleWordTap} accentColor={tc} />
+              <div style={{ fontSize:17, color:C.silver, fontWeight:700, marginBottom:14 }}>
+                🇺🇸 <TappableText text={revealSecondary} onWordTap={handleWordTap} accentColor='#FF4757' />
               </div>
             )}
-            {/* Meaning pill (non-immersion, non-defMode) */}
+            {/* Meaning — purple glow */}
             {!isImmersion && !defMode && card?.meaning && (
-              <div style={{ background:`${tc}11`, border:`1px solid ${tc}22`, borderRadius:12, padding:'10px 16px', fontSize:15, color:C.silver, fontWeight:600, lineHeight:1.4, marginTop:6 }}>
+              <div style={{ fontSize:17, color:'#c77dff', fontWeight:700, lineHeight:1.5, marginTop:2, marginBottom:4, textShadow:'0 0 14px #c77dff70, 0 0 28px #c77dff38' }}>
                 {card.meaning}
               </div>
             )}
-            {/* Example sentences */}
+            {/* Example sentences — gold glow */}
             {(card?.en_ex || (!isImmersion && card?.es_ex)) && (
-              <div style={{ marginTop:14, paddingTop:10 }}>
+              <div style={{ marginTop:18, paddingTop:14, borderTop:`1px solid ${C.dim}33` }}>
                 {card.en_ex && (
-                  <div style={{ fontSize:14, color:`${C.silver}bb`, lineHeight:1.6, fontStyle:'italic', marginBottom:6 }}>
-                    🇺🇸 "<TappableText text={card.en_ex} onWordTap={handleWordTap} accentColor={tc} />"
+                  <div style={{ fontSize:15, color:'#FFD700', lineHeight:1.7, fontStyle:'italic', marginBottom:8, fontWeight:600, textShadow:'0 0 14px #FFD70070, 0 0 28px #FFD70038' }}>
+                    🇺🇸 "<TappableText text={card.en_ex} onWordTap={handleWordTap} accentColor='#FFD700' />"
                   </div>
                 )}
                 {!isImmersion && !defMode && card.es_ex && (
