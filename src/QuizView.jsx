@@ -544,40 +544,40 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
         {/* Reveal mode OR both mode: flipped content */}
         {!isTypeMode && flipped && (
           <div style={{ marginTop:20, width:'100%', borderTop:`1px solid ${C.dim}33`, paddingTop:18, textAlign:'center', animation: isBothMode ? 'none' : 'revealIn .3s ease' }}>
-            <div style={{ fontSize:10, color: isImmersion ? tc : C.dim, fontWeight:800, letterSpacing:1, marginBottom:6 }}>
+            <div style={{ fontSize:11, color:tc, fontWeight:800, letterSpacing:1, marginBottom:8 }}>
               {backLangLabel}
             </div>
             {/* Primary reveal */}
             <div style={{
-              fontSize: (isImmersion || defMode) ? 16 : 22,
-              color: (isImmersion || defMode) ? `${C.silver}cc` : C.silver,
-              fontWeight: (isImmersion || defMode) ? 600 : 700,
-              marginBottom:8, lineHeight:1.4,
+              fontSize: (isImmersion || defMode) ? 20 : 26,
+              color: C.silver,
+              fontWeight: 700,
+              marginBottom:10, lineHeight:1.4,
             }}>
               <TappableText text={isImmersion ? (showBack || '') : (revealPrimary || '')} onWordTap={handleWordTap} accentColor={tc} />
             </div>
             {/* In defMode (non-immersion): show EN word below meaning */}
             {!isImmersion && revealSecondary && (
-              <div style={{ fontSize:13, color:C.dim, fontWeight:600, marginBottom:8 }}>
+              <div style={{ fontSize:15, color:`${C.silver}99`, fontWeight:600, marginBottom:10 }}>
                 🇺🇸 <TappableText text={revealSecondary} onWordTap={handleWordTap} accentColor={tc} />
               </div>
             )}
             {/* Meaning pill (non-immersion, non-defMode) */}
             {!isImmersion && !defMode && card?.meaning && (
-              <div style={{ background:`${tc}11`, border:`1px solid ${tc}22`, borderRadius:12, padding:'9px 14px', fontSize:13, color:`${C.silver}cc`, lineHeight:1.4, marginTop:4 }}>
+              <div style={{ background:`${tc}11`, border:`1px solid ${tc}22`, borderRadius:12, padding:'10px 16px', fontSize:15, color:C.silver, fontWeight:600, lineHeight:1.4, marginTop:6 }}>
                 {card.meaning}
               </div>
             )}
             {/* Example sentences */}
             {(card?.en_ex || (!isImmersion && card?.es_ex)) && (
-              <div style={{ marginTop:12, borderTop:`1px solid ${C.dim}22`, paddingTop:12, textAlign:'left' }}>
+              <div style={{ marginTop:14, paddingTop:10 }}>
                 {card.en_ex && (
-                  <div style={{ fontSize:12, color:`${C.silver}88`, lineHeight:1.5, fontStyle:'italic', marginBottom:4 }}>
+                  <div style={{ fontSize:14, color:`${C.silver}bb`, lineHeight:1.6, fontStyle:'italic', marginBottom:6 }}>
                     🇺🇸 "<TappableText text={card.en_ex} onWordTap={handleWordTap} accentColor={tc} />"
                   </div>
                 )}
                 {!isImmersion && !defMode && card.es_ex && (
-                  <div style={{ fontSize:11, color:`${C.dim}`, lineHeight:1.4, fontStyle:'italic' }}>
+                  <div style={{ fontSize:13, color:`${C.silver}77`, lineHeight:1.5, fontStyle:'italic' }}>
                     🇪🇸 "<TappableText text={card.es_ex} onWordTap={handleWordTap} accentColor={tc} />"
                   </div>
                 )}

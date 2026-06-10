@@ -311,13 +311,15 @@ export default function WordBlast({ themeColor, hideAnswer, beastModeUnlocked, g
               ))
             ) : (
               // Normal mode: colored ghost letters
-              current.en.split('').map((ch, i) => (
-                <span key={i} style={{
-                  color:letterColors[i],
-                  textShadow:letterColors[i]!=='#ffffff30'?`0 0 12px ${letterColors[i]}`:'none',
-                  transition:'color 0.08s,text-shadow 0.08s',
-                }}>{ch}</span>
-              ))
+              current.en.split('').map((ch, i) =>
+                ch === ' '
+                  ? <span key={i} style={{ display:'inline-block', width:'14px' }} />
+                  : <span key={i} style={{
+                      color:letterColors[i],
+                      textShadow:letterColors[i]!=='#ffffff30'?`0 0 12px ${letterColors[i]}`:'none',
+                      transition:'color 0.08s,text-shadow 0.08s',
+                    }}>{ch}</span>
+              )
             )}
           </div>
 
