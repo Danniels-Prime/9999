@@ -4,14 +4,16 @@ import ConvoAI from './ConvoAI';
 import StoryDialogues from './StoryDialogues';
 import VoiceLabView from './VoiceLabView';
 import FocusTimerView from './FocusTimerView';
+import CallTranscribe from './CallTranscribe';
 
 const LS_KEY = 'lucid_practice_mode';
 const MODES = [
-  { id:'speak',   icon:'🎤', label:'Speak' },
-  { id:'chat',    icon:'💬', label:'Chat AI' },
-  { id:'stories', icon:'📖', label:'Stories' },
-  { id:'voice',   icon:'🎙', label:'Voice Lab' },
-  { id:'focus',   icon:'◎', label:'Focus' },
+  { id:'speak',      icon:'🎤', label:'Speak' },
+  { id:'chat',       icon:'💬', label:'Chat AI' },
+  { id:'transcribe', icon:'📡', label:'Live' },
+  { id:'stories',    icon:'📖', label:'Stories' },
+  { id:'voice',      icon:'🎙', label:'Voice Lab' },
+  { id:'focus',      icon:'◎', label:'Focus' },
 ];
 
 export default function PracticeHub({ themeColor, voices, apiKey, openaiKey, openrouterKey, deepseekKey, customEndpoint, customKey, customModel, onBack, voiceRecs, onSaveVoiceRecs }) {
@@ -58,6 +60,19 @@ export default function PracticeHub({ themeColor, voices, apiKey, openaiKey, ope
         )}
         {mode === 'chat' && (
           <ConvoAI themeColor={themeColor} voices={voices} apiKey={apiKey} openaiKey={openaiKey} openrouterKey={openrouterKey} deepseekKey={deepseekKey} customEndpoint={customEndpoint} customKey={customKey} customModel={customModel} onBack={() => switchMode('speak')} />
+        )}
+        {mode === 'transcribe' && (
+          <CallTranscribe
+            themeColor={themeColor}
+            voices={voices}
+            apiKey={apiKey}
+            openaiKey={openaiKey}
+            openrouterKey={openrouterKey}
+            deepseekKey={deepseekKey}
+            customEndpoint={customEndpoint}
+            customKey={customKey}
+            customModel={customModel}
+          />
         )}
         {mode === 'stories' && (
           <StoryDialogues themeColor={themeColor} voices={voices} onBack={() => switchMode('speak')} apiKey={apiKey} openaiKey={openaiKey} openrouterKey={openrouterKey} deepseekKey={deepseekKey} customEndpoint={customEndpoint} customKey={customKey} customModel={customModel} />
