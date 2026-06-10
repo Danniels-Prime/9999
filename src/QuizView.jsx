@@ -1,5 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { PHRASES, SLANG, CATEGORY_THEMES } from './langData';
+import TappableText from './TappableText';
+import WordPopup from './WordPopup';
+import { lookupWordAI } from './aiLookup';
 
 const C = {
   void:'#03010a', card:'#0e0c1a', glass:'#14102a',
@@ -198,7 +201,10 @@ function PairMatch({ items, onRate, tc }) {
   );
 }
 
-export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77dff', godMode, studyMode = 'flip_es_en', voices = [], defMode = false, autoRead = true }) {
+const LS_PROVIDER = 'lucid_ai_provider';
+const PROVIDERS = ['claude','openai','openrouter','deepseek','custom'];
+
+export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77dff', godMode, studyMode = 'flip_es_en', voices = [], defMode = false, autoRead = true, apiKey = '', openaiKey = '', openrouterKey = '', deepseekKey = '', customEndpoint = '', customKey = '', customModel = '' }) {
   const [selectedCat, setSelectedCat] = useState('__all__');
   const [queue, setQueue]             = useState(() => getDueQueue(srs, null, studyMode === 'weak'));
   const [idx, setIdx]                 = useState(0);
@@ -209,9 +215,11 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
   const [typeInput, setTypeInput]     = useState('');
   const [typeResult, setTypeResult]   = useState(null);
   const [timeLeft, setTimeLeft]       = useState(30);
-  const cardRef   = useRef(null);
-  const inputRef  = useRef(null);
-  const catRowRef = useRef(null);
+  const cardRef      = useRef(null);
+  const inputRef     = useRef(null);
+  const catRowRef    = useRef(null);
+  const wordCacheRef = useRef({});
+  const [popup, setPopup] = useState(null);
 
   const isTypeMode   = studyMode === 'type' || studyMode === 'listen';
   const isMatchMode  = studyMode === 'match';
@@ -245,6 +253,28 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
     if (pref) utt.voice = pref;
     window.speechSynthesis.speak(utt);
   }, [voices]);
+
+  const provider = (() => {
+    const saved = localStorage.getItem(LS_PROVIDER);
+    return PROVIDERS.includes(saved) ? saved : 'claude';
+  })();
+  const aiCfg = { provider, claudeKey: apiKey, openaiKey, openrouterKey, deepseekKey, customEndpoint, customKey, customModel };
+
+  const handleWordTap = useCallback(async (word, sentence) => {
+    const key = word.toLowerCase();
+    if (wordCacheRef.current[key]) {
+      setPopup({ word, data: wordCacheRef.current[key], loading: false, error: null });
+      return;
+    }
+    setPopup({ word, data: null, loading: true, error: null });
+    try {
+      const data = await lookupWordAI(word, aiCfg, sentence);
+      wordCacheRef.current[key] = data;
+      setPopup({ word, data, loading: false, error: null });
+    } catch (e) {
+      setPopup({ word, data: null, loading: false, error: e.message === 'no_key' ? 'no_key' : e.message });
+    }
+  }, [apiKey, openaiKey, openrouterKey, deepseekKey, customEndpoint, customKey, customModel]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── Refresh queue when empty at session start ── */
   useEffect(() => {
@@ -489,7 +519,7 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
           color:tc, letterSpacing:2, textAlign:'center', lineHeight:1.1,
           textShadow:`0 0 20px ${tc}55`,
         }}>
-          {showFront}
+          <TappableText text={showFront || ''} onWordTap={handleWordTap} accentColor={tc} />
         </div>
 
         {/* listen mode: tap to hear button */}
@@ -524,12 +554,12 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
               fontWeight: (isImmersion || defMode) ? 600 : 700,
               marginBottom:8, lineHeight:1.4,
             }}>
-              {isImmersion ? showBack : revealPrimary}
+              <TappableText text={isImmersion ? (showBack || '') : (revealPrimary || '')} onWordTap={handleWordTap} accentColor={tc} />
             </div>
             {/* In defMode (non-immersion): show EN word below meaning */}
             {!isImmersion && revealSecondary && (
               <div style={{ fontSize:13, color:C.dim, fontWeight:600, marginBottom:8 }}>
-                🇺🇸 {revealSecondary}
+                🇺🇸 <TappableText text={revealSecondary} onWordTap={handleWordTap} accentColor={tc} />
               </div>
             )}
             {/* Meaning pill (non-immersion, non-defMode) */}
@@ -543,12 +573,12 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
               <div style={{ marginTop:12, borderTop:`1px solid ${C.dim}22`, paddingTop:12, textAlign:'left' }}>
                 {card.en_ex && (
                   <div style={{ fontSize:12, color:`${C.silver}88`, lineHeight:1.5, fontStyle:'italic', marginBottom:4 }}>
-                    🇺🇸 "{card.en_ex}"
+                    🇺🇸 "<TappableText text={card.en_ex} onWordTap={handleWordTap} accentColor={tc} />"
                   </div>
                 )}
                 {!isImmersion && !defMode && card.es_ex && (
                   <div style={{ fontSize:11, color:`${C.dim}`, lineHeight:1.4, fontStyle:'italic' }}>
-                    🇪🇸 "{card.es_ex}"
+                    🇪🇸 "<TappableText text={card.es_ex} onWordTap={handleWordTap} accentColor={tc} />"
                   </div>
                 )}
               </div>
@@ -591,10 +621,10 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
         {isTypeMode && typeResult === 'correct' && (
           <div style={{ marginTop:20, textAlign:'center', animation:'correctPop .4s ease' }}>
             <div style={{ color:C.bio, fontSize:28, fontWeight:900, marginBottom:6 }}>✓ Correct!</div>
-            <div style={{ color:`${C.silver}99`, fontSize:14 }}>{card?.en}</div>
+            <div style={{ color:`${C.silver}99`, fontSize:14 }}><TappableText text={card?.en || ''} onWordTap={handleWordTap} accentColor={tc} /></div>
             {card?.en_ex && (
               <div style={{ fontSize:12, color:`${C.dim}`, fontStyle:'italic', marginTop:8, lineHeight:1.4 }}>
-                "{card.en_ex}"
+                "<TappableText text={card.en_ex} onWordTap={handleWordTap} accentColor={tc} />"
               </div>
             )}
           </div>
@@ -604,13 +634,13 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
         {isTypeMode && typeResult === 'wrong' && (
           <div style={{ marginTop:20, textAlign:'center', animation:'wrongShake .4s ease' }}>
             <div style={{ color:C.red, fontSize:15, fontWeight:800, marginBottom:8 }}>✗ The answer was:</div>
-            <div style={{ color:C.silver, fontSize:24, fontWeight:700 }}>{card?.en}</div>
+            <div style={{ color:C.silver, fontSize:24, fontWeight:700 }}><TappableText text={card?.en || ''} onWordTap={handleWordTap} accentColor={tc} /></div>
             {card?.meaning && (
-              <div style={{ color:`${C.silver}77`, fontSize:12, marginTop:6, fontStyle:'italic' }}>{card.meaning}</div>
+              <div style={{ color:`${C.silver}77`, fontSize:12, marginTop:6, fontStyle:'italic' }}><TappableText text={card.meaning} onWordTap={handleWordTap} accentColor={tc} /></div>
             )}
             {card?.en_ex && (
               <div style={{ fontSize:11, color:`${C.dim}`, fontStyle:'italic', marginTop:6, lineHeight:1.4 }}>
-                "{card.en_ex}"
+                "<TappableText text={card.en_ex} onWordTap={handleWordTap} accentColor={tc} />"
               </div>
             )}
           </div>
@@ -664,6 +694,16 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
         <span style={{ color:C.red, fontSize:12, fontFamily:"'Space Mono',monospace" }}>✗ Again: {sessionAgain}</span>
         <span style={{ color:C.dim, fontSize:12, fontFamily:"'Space Mono',monospace" }}>+2 XP next</span>
       </div>
+      {popup && (
+        <WordPopup
+          word={popup.word}
+          data={popup.data}
+          loading={popup.loading}
+          error={popup.error}
+          onClose={() => setPopup(null)}
+          themeColor={godMode ? '#FFD700' : themeColor}
+        />
+      )}
     </div>
   );
 }

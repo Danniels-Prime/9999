@@ -1,7 +1,9 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { PHRASES, SLANG, CATEGORY_THEMES, TOTAL_PHRASES, TOTAL_SLANG } from './langData';
 import LangCard from './LangCard';
 import PairMatch from './PairMatch';
+import WordPopup from './WordPopup';
+import { lookupWordAI } from './aiLookup';
 
 const STUDY_MODES = [
   { id:'flip_es_en',  icon:'🇪🇸', label:'ES→EN' },
@@ -15,13 +17,18 @@ const STUDY_MODES = [
   { id:'match',       icon:'🃏',  label:'Match' },
 ];
 
-export default function LearnView({ godMode, voices, known, srs = {}, onRate, onThemeChange, level, levelPct, lifetimeScore, studyStreak = 0, username = '', studyMode = 'flip_es_en', onStudyModeChange, defMode = false, autoRead = true }) {
+const LS_PROVIDER = 'lucid_ai_provider';
+const PROVIDERS = ['claude','openai','openrouter','deepseek','custom'];
+
+export default function LearnView({ godMode, voices, known, srs = {}, onRate, onThemeChange, level, levelPct, lifetimeScore, studyStreak = 0, username = '', studyMode = 'flip_es_en', onStudyModeChange, defMode = false, autoRead = true, apiKey = '', openaiKey = '', openrouterKey = '', deepseekKey = '', customEndpoint = '', customKey = '', customModel = '' }) {
   const [mode, setMode]           = useState('phrases');
   const [activeCat, setActiveCat] = useState(null);
   const [flipped, setFlipped]     = useState(new Set());
   const [playingId, setPlayingId] = useState(null);
   const [timeLeft, setTimeLeft]   = useState(30);
   const [timerDone, setTimerDone] = useState(false);
+  const [popup, setPopup]         = useState(null);
+  const wordCacheRef              = useRef({});
 
   const source       = mode === 'phrases' ? PHRASES : SLANG;
   const catKeys      = Object.keys(source);
@@ -85,6 +92,28 @@ export default function LearnView({ godMode, voices, known, srs = {}, onRate, on
       window.speechSynthesis.speak(utt2);
     }
   }, [voices, autoRead]);
+
+  const provider = (() => {
+    const saved = localStorage.getItem(LS_PROVIDER);
+    return PROVIDERS.includes(saved) ? saved : 'claude';
+  })();
+  const aiCfg = { provider, claudeKey: apiKey, openaiKey, openrouterKey, deepseekKey, customEndpoint, customKey, customModel };
+
+  const handleWordTap = useCallback(async (word, sentence) => {
+    const key = word.toLowerCase();
+    if (wordCacheRef.current[key]) {
+      setPopup({ word, data: wordCacheRef.current[key], loading: false, error: null });
+      return;
+    }
+    setPopup({ word, data: null, loading: true, error: null });
+    try {
+      const data = await lookupWordAI(word, aiCfg, sentence);
+      wordCacheRef.current[key] = data;
+      setPopup({ word, data, loading: false, error: null });
+    } catch (e) {
+      setPopup({ word, data: null, loading: false, error: e.message === 'no_key' ? 'no_key' : e.message });
+    }
+  }, [apiKey, openaiKey, openrouterKey, deepseekKey, customEndpoint, customKey, customModel]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleFlip = useCallback((item) => {
     if (studyMode === 'speed' && timerDone) return;
@@ -269,11 +298,22 @@ export default function LearnView({ godMode, voices, known, srs = {}, onRate, on
                 onRate={yes => onRate(item.id, yes)}
                 studyMode={studyMode}
                 defMode={defMode}
+                onWordTap={handleWordTap}
               />
             ))}
           </div>
         )}
       </main>
+      {popup && (
+        <WordPopup
+          word={popup.word}
+          data={popup.data}
+          loading={popup.loading}
+          error={popup.error}
+          onClose={() => setPopup(null)}
+          themeColor={themeColor}
+        />
+      )}
     </div>
   );
 }
