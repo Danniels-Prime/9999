@@ -254,6 +254,16 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
     window.speechSynthesis.speak(utt);
   }, [voices]);
 
+  const speakES = useCallback((text) => {
+    if (!text) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'es-MX'; u.rate = 0.9;
+    const pref = voices.find(v => v.lang === 'es-MX') || voices.find(v => v.lang === 'es-ES') || voices.find(v => v.lang.startsWith('es'));
+    if (pref) u.voice = pref;
+    window.speechSynthesis.speak(u);
+  }, [voices]);
+
   const provider = (() => {
     const saved = localStorage.getItem(LS_PROVIDER);
     return PROVIDERS.includes(saved) ? saved : 'claude';
@@ -261,6 +271,7 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
   const aiCfg = { provider, claudeKey: apiKey, openaiKey, openrouterKey, deepseekKey, customEndpoint, customKey, customModel };
 
   const handleWordTap = useCallback(async (word, sentence) => {
+    if (!apiKey && !openaiKey && !openrouterKey && !deepseekKey && !customKey) return;
     const key = word.toLowerCase();
     if (wordCacheRef.current[key]) {
       setPopup({ word, data: wordCacheRef.current[key], loading: false, error: null });
@@ -305,7 +316,7 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
       const t = setTimeout(() => speak(card.en), 400);
       return () => clearTimeout(t);
     }
-    if (!isTypeMode) {
+    if (isBothMode) {
       const t = setTimeout(() => speak(card.en), 350);
       return () => clearTimeout(t);
     }
@@ -521,6 +532,19 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
         }}>
           <TappableText text={showFront || ''} onWordTap={handleWordTap} accentColor={tc} />
         </div>
+
+        {/* Spanish audio button — shown when ES is the front face */}
+        {!isReversedDir && !isImmersion && !isTypeMode && (
+          <button
+            onClick={e => { e.stopPropagation(); speakES(card?.es); }}
+            style={{
+              marginTop:10, padding:'6px 16px', borderRadius:12, fontSize:13,
+              background:'rgba(255,215,0,0.08)', border:'1px solid rgba(255,215,0,0.25)',
+              cursor:'pointer', color:'rgba(255,215,0,0.7)', fontFamily:"'Outfit',sans-serif",
+              fontWeight:700, transition:'all .15s',
+            }}
+          >🇪🇸 Escuchar</button>
+        )}
 
         {/* listen mode: tap to hear button */}
         {studyMode === 'listen' && !typeResult && (

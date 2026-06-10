@@ -93,6 +93,16 @@ export default function LearnView({ godMode, voices, known, srs = {}, onRate, on
     }
   }, [voices, autoRead]);
 
+  const speakES = useCallback((text) => {
+    if (!text) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'es-MX'; u.rate = 0.9;
+    const pref = voices.find(v => v.lang === 'es-MX') || voices.find(v => v.lang === 'es-ES') || voices.find(v => v.lang.startsWith('es'));
+    if (pref) u.voice = pref;
+    window.speechSynthesis.speak(u);
+  }, [voices]);
+
   const provider = (() => {
     const saved = localStorage.getItem(LS_PROVIDER);
     return PROVIDERS.includes(saved) ? saved : 'claude';
@@ -100,6 +110,7 @@ export default function LearnView({ godMode, voices, known, srs = {}, onRate, on
   const aiCfg = { provider, claudeKey: apiKey, openaiKey, openrouterKey, deepseekKey, customEndpoint, customKey, customModel };
 
   const handleWordTap = useCallback(async (word, sentence) => {
+    if (!apiKey && !openaiKey && !openrouterKey && !deepseekKey && !customKey) return;
     const key = word.toLowerCase();
     if (wordCacheRef.current[key]) {
       setPopup({ word, data: wordCacheRef.current[key], loading: false, error: null });
@@ -299,6 +310,7 @@ export default function LearnView({ godMode, voices, known, srs = {}, onRate, on
                 studyMode={studyMode}
                 defMode={defMode}
                 onWordTap={handleWordTap}
+                onSpeakES={speakES}
               />
             ))}
           </div>

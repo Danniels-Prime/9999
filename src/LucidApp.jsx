@@ -6,6 +6,7 @@ import Settings from './Settings';
 import LearnView from './LearnView';
 import FrequencyView from './FrequencyView';
 import QuizView from './QuizView';
+import MilestoneModal from './MilestoneModal';
 
 /* ── ÆTHERMIND color palette ── */
 const C = {
@@ -43,6 +44,18 @@ function getLevelPct(xp) {
   const ceil  = xpForLevel(lvl + 1);
   return Math.min(((xp - floor) / (ceil - floor)) * 100, 100);
 }
+
+/* ── Milestone reward schedule ── */
+const MILESTONE_REWARDS = {
+   15: { emoji:'🎖', title:'First Trophy!',      reward:'Achievement Badge', color:'#CD7F32' },
+   20: { emoji:'🥈', title:'Silver Rank!',        reward:'$0.25',            color:'#C0C0C0' },
+   25: { emoji:'🥇', title:'Gold Rank!',          reward:'$0.50',            color:'#FFD700' },
+   30: { emoji:'💎', title:'Diamond Rank!',       reward:'$1.00',            color:'#00e5ff' },
+   40: { emoji:'🏆', title:'Champion!',           reward:'$2.00',            color:'#FF8C00' },
+   50: { emoji:'🌟', title:'Legend!',             reward:'$5.00',            color:'#FF006E' },
+   77: { emoji:'👑', title:'GOD MODE UNLOCKED!',  reward:'$7.00',            color:'#FFD700' },
+  100: { emoji:'🚀', title:'Ultimate Master!',    reward:'$10.00',           color:'#9B30FF' },
+};
 
 /* ── Persistent store ── */
 const LS = {
@@ -309,8 +322,10 @@ export default function LucidApp() {
   const [customKey,      _setCustKey] = useState(() => LS.get('lucid_custom_key', ''));
   const [customModel,    _setCustMod] = useState(() => LS.get('lucid_custom_model', ''));
   const [username,       _setUser]    = useState(() => LS.get('lucid_username', ''));
-  const [studyStreak, setStudyStreak] = useState(0);
-  const studyStreakRef = useRef(0);
+  const [studyStreak, setStudyStreak]     = useState(0);
+  const studyStreakRef                    = useRef(0);
+  const [milestonePopup, setMilestonePopup] = useState(null);
+  const prevLevelRef                      = useRef(getLevel(LS.get('lucid_xp', 0)));
   const [studyMode, _setStudyMode]    = useState(() => LS.get('lucid_study_mode', 'flip_es_en'));
   const [defMode,   _setDefMode]      = useState(() => LS.get('lucid_def_mode', false));
   const [autoRead,  _setAutoRead]     = useState(() => LS.get('lucid_autoread', true));
@@ -351,7 +366,15 @@ export default function LucidApp() {
       studyStreakRef.current = ns;
       setStudyStreak(ns);
       const mult = ns >= 20 ? 5 : ns >= 10 ? 3 : ns >= 5 ? 2 : 1;
-      setLifetimeScore(prev => prev + mult);
+      setLifetimeScore(prev => {
+        const newXp = prev + mult;
+        const newLevel = getLevel(newXp);
+        if (newLevel > prevLevelRef.current && MILESTONE_REWARDS[newLevel]) {
+          setMilestonePopup({ level: newLevel, ...MILESTONE_REWARDS[newLevel] });
+        }
+        prevLevelRef.current = newLevel;
+        return newXp;
+      });
     } else {
       studyStreakRef.current = 0;
       setStudyStreak(0);
@@ -529,6 +552,13 @@ export default function LucidApp() {
         </div>
         <BottomNav view={view} setView={setView} themeColor={themeColor} dueCount={dueCount} />
       </div>
+      {milestonePopup && (
+        <MilestoneModal
+          level={milestonePopup.level}
+          milestone={milestonePopup}
+          onClose={() => setMilestonePopup(null)}
+        />
+      )}
     </div>
   );
 }

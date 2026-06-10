@@ -42,7 +42,7 @@ function fuzzyMatch(input, target) {
   return target.split(/[/,]/).map(t => norm(t.trim())).some(t => t === inp);
 }
 
-export default function LangCard({ item, theme, isFlipped, onFlip, index, godMode, isPlaying, onSpeak, rateStatus, onRate, studyMode, defMode = false, onWordTap }) {
+export default function LangCard({ item, theme, isFlipped, onFlip, index, godMode, isPlaying, onSpeak, rateStatus, onRate, studyMode, defMode = false, onWordTap, onSpeakES }) {
   const [typeInput, setTypeInput]   = useState('');
   const [typeResult, setTypeResult] = useState(null); // null | 'correct' | 'wrong'
   const [showInput, setShowInput]   = useState(false);
@@ -89,6 +89,13 @@ export default function LangCard({ item, theme, isFlipped, onFlip, index, godMod
 
   const ActionRow = () => (
     <div className="card-action-row" onClick={e => e.stopPropagation()}>
+      {onSpeakES && (
+        <button className="card-audio-btn"
+          style={{ '--cc':'#FFD700', '--cd':theme.dim, '--cg':theme.glow }}
+          onClick={() => onSpeakES(item.es)} title="Escuchar español">
+          🇪🇸
+        </button>
+      )}
       <button className={`card-audio-btn${isPlaying?' playing':''}`}
         style={{ '--cc':cc, '--cd':theme.dim, '--cg':theme.glow }} onClick={onSpeak}>
         {isPlaying ? <MiniWave color={cc}/> : '🔊'}
@@ -266,8 +273,17 @@ export default function LangCard({ item, theme, isFlipped, onFlip, index, godMod
           {rateStatus==='no'  && <div style={{ fontSize:'9px', color:'#FF006E', fontWeight:700, textAlign:'center', animation:'ratePop .2s ease' }}>🔁 ¡A repasar!</div>}
         </>
       ) : (
-        <div style={{ fontSize:'10px', color:'#3d3b60', fontWeight:700, marginTop:'auto', display:'flex', alignItems:'center', gap:'4px' }}>
-          <span>👆</span> {isSpeedMode ? 'tap fast · rate!' : 'tap · hear 🔊 · rate ✅❌'}
+        <div style={{ marginTop:'auto', display:'flex', alignItems:'center', gap:'6px', flexWrap:'wrap' }}>
+          {!isReversed && !isImmersion && onSpeakES && (
+            <button onClick={e => { e.stopPropagation(); onSpeakES(item.es); }}
+              style={{ padding:'2px 8px', borderRadius:8, border:'1px solid rgba(255,215,0,0.3)',
+                background:'none', fontSize:12, cursor:'pointer', color:'rgba(255,215,0,0.65)', fontFamily:'inherit', flexShrink:0 }}>
+              🇪🇸🔊
+            </button>
+          )}
+          <span style={{ fontSize:'10px', color:'#3d3b60', fontWeight:700, display:'flex', alignItems:'center', gap:'4px' }}>
+            <span>👆</span>{isSpeedMode ? 'tap fast · rate!' : 'tap · hear 🔊 · rate ✅❌'}
+          </span>
         </div>
       )}
     </div>
