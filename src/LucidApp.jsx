@@ -424,6 +424,13 @@ export default function LucidApp() {
               onStudyModeChange={saveStudyMode}
               defMode={defMode}
               autoRead={autoRead}
+              apiKey={apiKey}
+              openaiKey={openaiKey}
+              openrouterKey={openrouterKey}
+              deepseekKey={deepseekKey}
+              customEndpoint={customEndpoint}
+              customKey={customKey}
+              customModel={customModel}
             />
           )}
           {view === 'quiz' && (
@@ -437,6 +444,13 @@ export default function LucidApp() {
               voices={voices}
               defMode={defMode}
               autoRead={autoRead}
+              apiKey={apiKey}
+              openaiKey={openaiKey}
+              openrouterKey={openrouterKey}
+              deepseekKey={deepseekKey}
+              customEndpoint={customEndpoint}
+              customKey={customKey}
+              customModel={customModel}
             />
           )}
           {view === 'blast' && (

@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import TappableText from './TappableText';
 
 const WORD_EMOJI = {
   'water':'💧','coffee':'☕','milk':'🥛','juice':'🧃',
@@ -41,7 +42,7 @@ function fuzzyMatch(input, target) {
   return target.split(/[/,]/).map(t => norm(t.trim())).some(t => t === inp);
 }
 
-export default function LangCard({ item, theme, isFlipped, onFlip, index, godMode, isPlaying, onSpeak, rateStatus, onRate, studyMode, defMode = false }) {
+export default function LangCard({ item, theme, isFlipped, onFlip, index, godMode, isPlaying, onSpeak, rateStatus, onRate, studyMode, defMode = false, onWordTap }) {
   const [typeInput, setTypeInput]   = useState('');
   const [typeResult, setTypeResult] = useState(null); // null | 'correct' | 'wrong'
   const [showInput, setShowInput]   = useState(false);
@@ -66,6 +67,10 @@ export default function LangCard({ item, theme, isFlipped, onFlip, index, godMod
   const backColor  = isReversed ? '#FFD700' : cc;
   const backSize   = isReversed ? fs_es : fs_en;
   const backGlow   = isReversed ? '0 0 14px #FFD70080' : `0 0 20px ${cc}, 0 0 40px ${cc}60`;
+
+  const tap = (text, color) => onWordTap
+    ? <TappableText text={text} onWordTap={onWordTap} accentColor={color || cc} />
+    : text;
 
   const checkType = useCallback(() => {
     if (!typeInput.trim()) return;
@@ -101,10 +106,10 @@ export default function LangCard({ item, theme, isFlipped, onFlip, index, godMod
       <div className={`lang-card${godMode?' god-mode':''}${isKnown?' known-glow':''}`} style={base}>
         <div className="card-glow"/>{badge}
         <div style={{ fontSize:'10px', color:'#6b69a0', fontWeight:800, letterSpacing:'0.8px' }}>🇪🇸 ES</div>
-        <div style={{ fontSize:fs_es, fontWeight:900, color:'#FFD700', lineHeight:1.3 }}>{item.es}</div>
+        <div style={{ fontSize:fs_es, fontWeight:900, color:'#FFD700', lineHeight:1.3 }}>{tap(item.es, '#FFD700')}</div>
         <div style={{ width:'100%', height:'1px', background:'rgba(255,255,255,0.07)', margin:'4px 0', flexShrink:0 }}/>
         <div style={{ fontSize:'10px', color:cc, fontWeight:800, letterSpacing:'0.8px' }}>🇺🇸 EN</div>
-        <div style={{ fontSize:fs_en, fontWeight:900, color:cc, lineHeight:1.25, textShadow:`0 0 14px ${cc}60`, letterSpacing:'-0.3px' }}>{item.en}</div>
+        <div style={{ fontSize:fs_en, fontWeight:900, color:cc, lineHeight:1.25, textShadow:`0 0 14px ${cc}60`, letterSpacing:'-0.3px' }}>{tap(item.en, cc)}</div>
         {item.meaning && <div style={{ fontSize:'9px', color:'#5e5c88', fontStyle:'italic', lineHeight:1.3 }}>{item.meaning}</div>}
         <ActionRow/>
       </div>
@@ -119,7 +124,7 @@ export default function LangCard({ item, theme, isFlipped, onFlip, index, godMod
         onClick={() => !showInput && !typeResult && setShowInput(true)}>
         <div className="card-glow"/>{badge}
         <div style={{ fontSize:'10px', color:'#6b69a0', fontWeight:800, letterSpacing:'0.8px' }}>🇪🇸 ES</div>
-        <div style={{ fontSize:fs_es, fontWeight:900, color:'#FFD700', lineHeight:1.3 }}>{item.es}</div>
+        <div style={{ fontSize:fs_es, fontWeight:900, color:'#FFD700', lineHeight:1.3 }}>{tap(item.es, '#FFD700')}</div>
 
         {!showInput && !typeResult && (
           <div style={{ fontSize:'10px', color:'#3d3b60', fontWeight:700, marginTop:'auto', display:'flex', alignItems:'center', gap:'4px' }}>⌨️ tap to type answer</div>
@@ -138,7 +143,7 @@ export default function LangCard({ item, theme, isFlipped, onFlip, index, godMod
         {typeResult && (
           <div style={{ display:'flex', flexDirection:'column', gap:'4px', marginTop:'4px' }}>
             <p style={{ fontSize:'11px', fontWeight:800, color:typeResult==='correct'?'#00FF88':'#FF006E', animation:'ratePop .2s ease' }}>
-              {typeResult==='correct' ? '🎯 Correct!' : `❌ ${item.en}`}
+              {typeResult==='correct' ? '🎯 Correct!' : <span>❌ {tap(item.en, cc)}</span>}
             </p>
             <ActionRow/>
           </div>
@@ -185,9 +190,9 @@ export default function LangCard({ item, theme, isFlipped, onFlip, index, godMod
           <div style={{ display:'flex', flexDirection:'column', gap:'5px', flex:1 }}>
             <div style={{ textAlign:'center', fontSize:'20px' }}>{typeResult==='correct'?'✅':'❌'}</div>
             <p style={{ fontSize:'12px', fontWeight:800, color:typeResult==='correct'?'#00FF88':'#FF006E', textAlign:'center' }}>
-              {typeResult==='correct' ? '🎯 Correct!' : item.en}
+              {typeResult==='correct' ? '🎯 Correct!' : tap(item.en, cc)}
             </p>
-            <p style={{ fontSize:'10px', color:'#5e5c88', textAlign:'center' }}>🇪🇸 {item.es}</p>
+            <p style={{ fontSize:'10px', color:'#5e5c88', textAlign:'center' }}>🇪🇸 {tap(item.es, '#FFD700')}</p>
             <div className="card-action-row" onClick={e=>e.stopPropagation()}>
               <button className={`card-rate-btn${rateStatus==='yes'?' yes':''}`} onClick={() => { onRate(true); reset(); }}>✅ Sí</button>
               <button className={`card-rate-btn${rateStatus==='no'?' no':''}`}  onClick={() => { onRate(false); reset(); }}>❌ No</button>
@@ -231,7 +236,7 @@ export default function LangCard({ item, theme, isFlipped, onFlip, index, godMod
       <div style={{ fontSize:'10px', color:isReversed?cc:'#6b69a0', fontWeight:800, letterSpacing:'0.8px' }}>{frontLang}</div>
       <div style={{ fontSize:frontSize, fontWeight:900, color:frontColor, lineHeight:1.3,
         textShadow:isFlipped?(isReversed?`0 0 14px ${cc}80`:'0 0 14px #FFD70080'):'none', transition:'text-shadow .2s' }}>
-        {frontText}
+        {tap(frontText, frontColor)}
       </div>
 
       {isFlipped ? (
@@ -240,20 +245,20 @@ export default function LangCard({ item, theme, isFlipped, onFlip, index, godMod
           <div style={{ fontSize:'10px', color:isReversed?'#6b69a0':cc, fontWeight:800, letterSpacing:'0.8px' }}>{backLang}</div>
           {/* Primary back content */}
           <div style={{ fontSize:backPrimaryFs, fontWeight:900, color:backColor, lineHeight:1.25, textShadow:backGlow, letterSpacing:'-0.3px', padding:'4px 0 2px' }}>
-            {backPrimary}
+            {tap(backPrimary, backColor)}
           </div>
           {/* defMode only (not immersion): show EN word smaller below the definition */}
           {defMode && !isImmersion && !isReversed && item.meaning && (
-            <div style={{ fontSize:'11px', color:`${cc}99`, fontWeight:700, lineHeight:1.2 }}>{item.en}</div>
+            <div style={{ fontSize:'11px', color:`${cc}99`, fontWeight:700, lineHeight:1.2 }}>{tap(item.en, cc)}</div>
           )}
           {/* Meaning (shown when NOT in defMode or immersion) */}
           {!isImmersion && !defMode && item.meaning && !isReversed && (
-            <div style={{ fontSize:'10px', color:cc, fontWeight:700, lineHeight:1.3, opacity:0.8 }}>{item.meaning}</div>
+            <div style={{ fontSize:'10px', color:cc, fontWeight:700, lineHeight:1.3, opacity:0.8 }}>{tap(item.meaning, cc)}</div>
           )}
           {/* English example sentence (always shown; immersion hides nothing — no Spanish anyway) */}
           {item.en_ex && !isReversed && (
             <div style={{ fontSize:'9px', color:'#6b69a0', lineHeight:1.4, fontStyle:'italic', borderLeft:`2px solid ${cc}40`, paddingLeft:'6px', marginTop:'1px' }}>
-              "{item.en_ex}"
+              "{tap(item.en_ex, cc)}"
             </div>
           )}
           <ActionRow/>
