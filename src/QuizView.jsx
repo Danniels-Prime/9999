@@ -198,7 +198,7 @@ function PairMatch({ items, onRate, tc }) {
   );
 }
 
-export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77dff', godMode, studyMode = 'flip_es_en', voices = [], defMode = false, autoRead = true }) {
+export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77dff', godMode, studyMode = 'flip_es_en', voices = [], defMode = false, showCardImages = true, autoRead = true }) {
   const [selectedCat, setSelectedCat] = useState('__all__');
   const [queue, setQueue]             = useState(() => getDueQueue(srs, null, studyMode === 'weak'));
   const [idx, setIdx]                 = useState(0);
@@ -471,8 +471,14 @@ export default function QuizView({ srs = {}, known, onRate, themeColor = '#c77df
           {catLabel}
         </div>
 
-        {/* Word emoji (for concrete nouns) */}
-        {emoji && (
+        {/* Card image or emoji (front face only) */}
+        {showCardImages && card && !flipped && (
+          <img src={getCardImageUrl(card)} alt={card.en} loading="lazy"
+            width="130" height="130"
+            style={{ borderRadius:'16px', objectFit:'cover', marginBottom:'10px', opacity:0.9, display:'block', margin:'0 auto 10px' }}
+            onError={e => { e.currentTarget.style.display = 'none'; }} />
+        )}
+        {!showCardImages && emoji && !flipped && (
           <div style={{ fontSize:48, marginBottom:8, lineHeight:1, filter:`drop-shadow(0 0 10px ${tc}44)` }}>
             {emoji}
           </div>

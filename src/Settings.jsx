@@ -186,7 +186,7 @@ function ClassifiedCard({ unlocked, icon, codename, featureName, powers, progres
   );
 }
 
-export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, onToggleHideAnswer, knownCount = 0, totalCards = 896, apiKey = '', onSaveApiKey, openaiKey = '', onSaveOpenaiKey, openrouterKey = '', onSaveOpenrouterKey, deepseekKey = '', onSaveDeepseekKey, customEndpoint = '', onSaveCustomEndpoint, customKey = '', onSaveCustomKey, customModel = '', onSaveCustomModel, level = 1, levelPct = 0, username = '', onSaveUsername, studyMode = 'flip_es_en', onSaveStudyMode, defMode = false, onSaveDefMode, autoRead = true, onSaveAutoRead, hz = null, hzColor = null, onGoToFreq, onGoToPractice }) {
+export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, onToggleHideAnswer, knownCount = 0, totalCards = 896, apiKey = '', onSaveApiKey, openaiKey = '', onSaveOpenaiKey, openrouterKey = '', onSaveOpenrouterKey, deepseekKey = '', onSaveDeepseekKey, customEndpoint = '', onSaveCustomEndpoint, customKey = '', onSaveCustomKey, customModel = '', onSaveCustomModel, level = 1, levelPct = 0, username = '', onSaveUsername, studyMode = 'flip_es_en', onSaveStudyMode, defMode = false, onSaveDefMode, showCardImages = true, onSaveShowCardImages, autoRead = true, onSaveAutoRead, hz = null, hzColor = null, onGoToFreq, onGoToPractice }) {
   const [showKey,   setShowKey]   = useState(false);
   const [showKey2,  setShowKey2]  = useState(false);
   const [showKeyOR, setShowKeyOR] = useState(false);
@@ -409,7 +409,15 @@ export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, on
             on={autoRead}
             onToggle={() => onSaveAutoRead?.(!autoRead)}
             label="🔊 Read Aloud"
-            sub="Auto-speak English phrase & example sentence on card flip"
+            sub="Auto-speak English phrase & example sentence when a card is flipped"
+          />
+        </div>
+        <div style={{ marginTop:'10px' }}>
+          <Toggle
+            on={showCardImages}
+            onToggle={() => onSaveShowCardImages?.(!showCardImages)}
+            label="🖼 Card Images"
+            sub="AI-generated illustration on each card front (Pollinations.ai · free · cached)"
           />
         </div>
       </div>
