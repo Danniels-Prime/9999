@@ -15,7 +15,7 @@ const STUDY_MODES = [
   { id:'match',       icon:'🃏',  label:'Match' },
 ];
 
-export default function LearnView({ godMode, voices, known, srs = {}, onRate, onThemeChange, level, levelPct, lifetimeScore, studyStreak = 0, username = '', studyMode = 'flip_es_en', onStudyModeChange, defMode = false, autoRead = true }) {
+export default function LearnView({ godMode, voices, known, srs = {}, onRate, onThemeChange, level, levelPct, lifetimeScore, studyStreak = 0, username = '', studyMode = 'flip_es_en', onStudyModeChange, defMode = false, showCardImages = true, autoRead = true }) {
   const [mode, setMode]           = useState('phrases');
   const [activeCat, setActiveCat] = useState(null);
   const [flipped, setFlipped]     = useState(new Set());
@@ -269,6 +269,7 @@ export default function LearnView({ godMode, voices, known, srs = {}, onRate, on
                 onRate={yes => onRate(item.id, yes)}
                 studyMode={studyMode}
                 defMode={defMode}
+                showCardImages={showCardImages}
               />
             ))}
           </div>

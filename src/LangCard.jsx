@@ -21,6 +21,12 @@ function getWordEmoji(en) {
   return WORD_EMOJI[en.toLowerCase().trim()] || null;
 }
 
+function getCardImageUrl(item) {
+  const seed = item.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % 1000;
+  const prompt = encodeURIComponent(`minimalist flat illustration, ${item.en}, white background, soft colors, no text`);
+  return `https://image.pollinations.ai/prompt/${prompt}?width=160&height=160&nologo=true&seed=${seed}`;
+}
+
 function MiniWave({ color }) {
   return (
     <span style={{ display:'inline-flex', gap:'2px', alignItems:'center', height:'14px' }}>
@@ -41,7 +47,7 @@ function fuzzyMatch(input, target) {
   return target.split(/[/,]/).map(t => norm(t.trim())).some(t => t === inp);
 }
 
-export default function LangCard({ item, theme, isFlipped, onFlip, index, godMode, isPlaying, onSpeak, rateStatus, onRate, studyMode, defMode = false }) {
+export default function LangCard({ item, theme, isFlipped, onFlip, index, godMode, isPlaying, onSpeak, rateStatus, onRate, studyMode, defMode = false, showCardImages = true }) {
   const [typeInput, setTypeInput]   = useState('');
   const [typeResult, setTypeResult] = useState(null); // null | 'correct' | 'wrong'
   const [showInput, setShowInput]   = useState(false);
@@ -223,8 +229,14 @@ export default function LangCard({ item, theme, isFlipped, onFlip, index, godMod
         </div>
       )}
 
-      {/* Emoji for concrete nouns (front face only) */}
-      {emoji && !isFlipped && (
+      {/* Card image or emoji (front face only) */}
+      {showCardImages && !isFlipped && (
+        <img src={getCardImageUrl(item)} alt={item.en} loading="lazy"
+          width="76" height="76"
+          style={{ borderRadius:'10px', objectFit:'cover', marginBottom:'3px', opacity:0.88, display:'block', alignSelf:'center' }}
+          onError={e => { e.currentTarget.style.display = 'none'; }} />
+      )}
+      {!showCardImages && emoji && !isFlipped && (
         <div style={{ fontSize:'28px', lineHeight:1, marginBottom:'2px' }}>{emoji}</div>
       )}
 
