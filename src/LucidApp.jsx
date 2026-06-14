@@ -6,6 +6,7 @@ import Settings from './Settings';
 import LearnView from './LearnView';
 import FrequencyView from './FrequencyView';
 import QuizView from './QuizView';
+import LangSelector from './LangSelector';
 
 /* ── ÆTHERMIND color palette ── */
 const C = {
@@ -315,6 +316,7 @@ export default function LucidApp() {
   const [defMode,        _setDefMode]        = useState(() => LS.get('lucid_def_mode',     false));
   const [showCardImages, _setShowCardImages] = useState(() => LS.get('lucid_card_images',  true));
   const [autoRead,       _setAutoRead]       = useState(() => LS.get('lucid_autoread',     true));
+  const [langPair,       _setLangPair]       = useState(() => LS.get('lucid_lang_pair',    null));
 
   const saveApiKey         = useCallback((k) => { setApiKey(k);     LS.set('lucid_api_key',      k); }, []);
   const saveOpenaiKey      = useCallback((k) => { _setOAI(k);       LS.set('lucid_openai_key',   k); }, []);
@@ -328,6 +330,7 @@ export default function LucidApp() {
   const saveDefMode        = useCallback((v) => { _setDefMode(v);        LS.set('lucid_def_mode',    v); }, []);
   const saveShowCardImages = useCallback((v) => { _setShowCardImages(v); LS.set('lucid_card_images', v); }, []);
   const saveAutoRead       = useCallback((v) => { _setAutoRead(v);       LS.set('lucid_autoread',    v); }, []);
+  const saveLangPair       = useCallback((v) => { _setLangPair(v);       LS.set('lucid_lang_pair',   v); }, []);
   const saveSrs            = useCallback((s) => { setSrsRaw(s);     LS.set('lucid_srs',          s); }, []);
   const saveVoiceRecs      = useCallback((r) => { setVoiceRecsRaw(r); LS.set('lucid_voice_recs', r); }, []);
 
@@ -400,6 +403,20 @@ export default function LucidApp() {
   }, []);
 
   const stopHz = useCallback(() => { audioHook.stop(); setHz(null); }, [audioHook]);
+
+  // First launch or explicit lang selector view
+  if (!langPair || view === 'lang') {
+    return (
+      <div style={{ height:'100%', position:'relative', background:'#03010a', color:'#d0d0e8', overflow:'hidden' }}>
+        <style>{GLOBAL_CSS}</style>
+        <LangSelector
+          currentPair={langPair}
+          onSelect={(pair) => { saveLangPair(pair); setView('learn'); }}
+          onBack={langPair ? () => setView('learn') : null}
+        />
+      </div>
+    );
+  }
 
   return (
     <div style={{ height:'100%', position:'relative', background:C.void, color:C.silver, overflow:'hidden' }}>
@@ -500,6 +517,8 @@ export default function LucidApp() {
               hz={hz}
               hzColor={hzColor}
               onGoToFreq={() => setView('freq')}
+              langPair={langPair}
+              onGoToLangSelect={() => setView('lang')}
             />
           )}
           {view === 'practice' && (

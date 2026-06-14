@@ -186,7 +186,7 @@ function ClassifiedCard({ unlocked, icon, codename, featureName, powers, progres
   );
 }
 
-export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, onToggleHideAnswer, knownCount = 0, totalCards = 896, apiKey = '', onSaveApiKey, openaiKey = '', onSaveOpenaiKey, openrouterKey = '', onSaveOpenrouterKey, deepseekKey = '', onSaveDeepseekKey, customEndpoint = '', onSaveCustomEndpoint, customKey = '', onSaveCustomKey, customModel = '', onSaveCustomModel, level = 1, levelPct = 0, username = '', onSaveUsername, studyMode = 'flip_es_en', onSaveStudyMode, defMode = false, onSaveDefMode, showCardImages = true, onSaveShowCardImages, autoRead = true, onSaveAutoRead, hz = null, hzColor = null, onGoToFreq, onGoToPractice }) {
+export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, onToggleHideAnswer, knownCount = 0, totalCards = 896, apiKey = '', onSaveApiKey, openaiKey = '', onSaveOpenaiKey, openrouterKey = '', onSaveOpenrouterKey, deepseekKey = '', onSaveDeepseekKey, customEndpoint = '', onSaveCustomEndpoint, customKey = '', onSaveCustomKey, customModel = '', onSaveCustomModel, level = 1, levelPct = 0, username = '', onSaveUsername, studyMode = 'flip_es_en', onSaveStudyMode, defMode = false, onSaveDefMode, showCardImages = true, onSaveShowCardImages, autoRead = true, onSaveAutoRead, hz = null, hzColor = null, onGoToFreq, onGoToPractice, langPair = null, onGoToLangSelect }) {
   const [showKey,   setShowKey]   = useState(false);
   const [showKey2,  setShowKey2]  = useState(false);
   const [showKeyOR, setShowKeyOR] = useState(false);
@@ -384,6 +384,32 @@ export default function Settings({ lifetimeScore, bestEverStreak, hideAnswer, on
             <button onClick={() => setShowKey4(s => !s)} style={{ background:'rgba(255,255,255,0.06)', border:'1px solid #27254a', borderRadius:'10px', padding:'9px 12px', color:'#9b99c0', cursor:'pointer', fontSize:'14px' }}>{showKey4 ? '🙈' : '👁'}</button>
           </div>
           <p style={{ fontSize:'10px', color:'#3d3b60', marginTop:'6px' }}>Uses Bearer token auth — stored on this device only</p>
+        </div>
+      </div>
+
+      {/* ── LANGUAGE ── */}
+      <div style={{ marginBottom: '28px' }}>
+        <SectionLabel icon="🌍" label="LANGUAGE" color="#FF9500" />
+        <div style={{ background: 'rgba(255,149,0,0.06)', border: '1px solid rgba(255,149,0,0.2)', borderRadius: 16, padding: '14px 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+            <span style={{ fontSize: 28 }}>
+              {langPair === 'ja_en' ? '🇯🇵→🇺🇸' : langPair === 'fr_en' ? '🇫🇷→🇺🇸' : langPair === 'pt_en' ? '🇧🇷→🇺🇸' : '🇪🇸→🇺🇸'}
+            </span>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 900, color: '#FF9500' }}>
+                {langPair === 'ja_en' ? 'Japanese' : langPair === 'fr_en' ? 'French' : langPair === 'pt_en' ? 'Portuguese' : 'Spanish'} → English
+              </p>
+              <p style={{ fontSize: 11, color: '#5e5c88', marginTop: 2 }}>Current language pair</p>
+            </div>
+          </div>
+          <button onClick={onGoToLangSelect} style={{
+            width: '100%', padding: '12px 0', borderRadius: 12,
+            border: '1px solid rgba(255,149,0,0.4)',
+            background: 'rgba(255,149,0,0.1)', color: '#FF9500',
+            fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
+          }}>
+            🌍 Change Language
+          </button>
         </div>
       </div>
 
